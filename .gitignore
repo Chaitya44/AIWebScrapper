@@ -1,0 +1,14 @@
+# Secrets (NEVER UPLOAD)
+.env
+.env.local
+
+# Python System Files
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local Data (Don't share scraped data)
+*.db
+*.csv
+*.log
