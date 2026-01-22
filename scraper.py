@@ -1,90 +1,88 @@
 from DrissionPage import ChromiumPage, ChromiumOptions
+from bs4 import BeautifulSoup, Comment
+import tempfile
+import shutil
+import random
 import time
-from bs4 import BeautifulSoup
+import os
 
 
 def get_website_content(url):
-    """
-    Uses DrissionPage to bypass Cloudflare and scrape data.
-    """
-    print(f"🕵️‍♂️ Launching DrissionPage for: {url}")
+    print(f"🕵️ Student Stealth Mode: {url}")
 
-    # 1. Setup options to look like a real user
+    # TRICK 1: Create a temporary user profile
+    # This makes every run look like a "fresh" computer to the website.
+    temp_user_data = tempfile.mkdtemp()
+
+    # TRICK 2: Randomize the Viewport (Window Size)
+    # Bots usually have standard sizes (800x600). We randomize it to look human.
+    width = random.randint(1024, 1920)
+    height = random.randint(768, 1080)
+
     co = ChromiumOptions()
-    co.set_argument('--no-sandbox')  # Helps on some systems
+    co.headless(False)  # MUST BE FALSE. Visible windows are trusted more.
+    co.set_argument(f'--window-size={width},{height}')
+    co.set_argument(f'--user-data-dir={temp_user_data}')
+    co.set_argument('--no-first-run')
+    co.auto_port()
 
-    # CRITICAL: Mute audio so the browser doesn't make noise
-    co.set_argument('--mute-audio')
-
+    page = None
     try:
-        # 2. Start the browser
-        # DrissionPage finds your existing Chrome installation automatically
-        page = ChromiumPage(co)
+        page = ChromiumPage(addr_or_opts=co)
 
-        # 3. Visit the URL
+        # TRICK 3: Anti-Detection Scripts
+        # These remove the "I am a robot" flags that Chrome sends by default.
+        page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
         page.get(url)
 
-        # 4. ANTI-BOT HANDLING (The "Cyborg" Part)
-        print("⏳ Analyzing page for protection...")
-        time.sleep(3)  # Wait for redirects
+        # TRICK 4: "Human" Interaction Logic
+        # Instead of a fixed sleep, we wait for the network to stop moving.
+        print("⏳ Waiting for page to stabilize...")
 
-        # Check if we are on a "Just a moment..." or "Access denied" page
-        if "Just a moment" in page.title or "Access denied" in page.title or "Cloudflare" in page.title:
-            print("⚠️ Cloudflare/Captcha detected! Attempting bypass...")
-
-            # DrissionPage can look inside the "Shadow DOM" (where Cloudflare hides)
-            # We look for the checkbox wrapper and try to click it
-            try:
-                # Common Cloudflare ID
-                if page.ele("@id=turnstile-wrapper", timeout=2):
-                    page.ele("@id=turnstile-wrapper").click()
-                    print("✅ Clicked Turnstile verification.")
-                    time.sleep(3)
-
-                # Sometimes it's a specific challenge frame
-                elif page.ele("tag:iframe@src^https://challenges.cloudflare.com", timeout=2):
-                    iframe = page.get_frame("tag:iframe@src^https://challenges.cloudflare.com")
-                    if iframe and iframe.ele("tag:input@type=checkbox"):
-                        iframe.ele("tag:input@type=checkbox").click()
-                        print("✅ Clicked Challenge Checkbox.")
-                        time.sleep(3)
-
-            except Exception as e:
-                print(f"⚠️ Auto-click failed: {e}. Waiting for manual solve...")
-                # If auto-click fails, we wait for YOU to do it
-                time.sleep(10)
-
-                # 5. Wait for real content to load
-        # We assume real content is loaded when the title changes or text appears
+        # Dynamic Wait: Wait 2s, then scroll, then wait again.
+        # This triggers "Lazy Loading" on Zillow/Spotify.
         time.sleep(3)
 
-        # 6. Scroll to load lazy data (images/products)
-        print("📜 Scrolling to load data...")
-        page.scroll.to_bottom()
-        time.sleep(1)
-        page.scroll.to_top()
+        print("⬇️ Scrolling to wake up the page...")
+        for _ in range(4):
+            page.scroll.down(400)  # Small scroll, like a mouse wheel
+            time.sleep(random.uniform(0.5, 1.2))  # Random pause
 
-        # 7. Extract HTML
-        html_content = page.html
+        # Check for empty page (common block)
+        if len(page.html) < 2000:
+            print("⚠️ Page looks empty. Waiting longer...")
+            time.sleep(5)
 
-        # Close the browser connection (keeps browser open usually, but we disconnect)
-        page.quit()
+        # FINAL GRAB
+        raw_html = page.html
 
-        # 8. Clean with BeautifulSoup
-        soup = BeautifulSoup(html_content, 'html.parser')
+        # CLEANUP: Remove junk to save AI tokens
+        soup = BeautifulSoup(raw_html, "html.parser")
+        for tag in soup(["script", "style", "svg", "img", "video", "header", "footer", "iframe", "meta"]):
+            tag.decompose()
 
-        # Remove junk elements
-        for element in soup(["script", "style", "nav", "footer", "iframe", "svg"]):
-            element.extract()
+        for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
+            comment.extract()
 
-        # Get clean text
-        clean_text = soup.get_text(separator=' ', strip=True)
-        return clean_text[:15000]  # Return first 15k chars
+        clean_html = str(soup.body)
+        clean_html = " ".join(clean_html.split())
+
+        print(f"✅ Success! Captured {len(clean_html)} chars.")
+        return clean_html[:300000]
 
     except Exception as e:
-        print(f"❌ DrissionPage Error: {e}")
+        print(f"❌ Error: {e}")
+        return None
+
+    finally:
+        # cleanup
+        if page:
+            try:
+                page.quit()
+            except:
+                pass
         try:
-            page.quit()
+            shutil.rmtree(temp_user_data, ignore_errors=True)
         except:
             pass
-        return None

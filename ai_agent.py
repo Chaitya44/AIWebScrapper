@@ -1,49 +1,74 @@
-# FILE: ai_agent.py
 import os
-import re
 import json
+import re
+import google.generativeai as genai
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
 
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+if not API_KEY:
+    print("❌ Error: GEMINI_API_KEY is missing from .env")
 
-def get_ai_client():
-    if not API_KEY:
-        raise ValueError("❌ API Key not found! Check your .env file.")
-    return genai.Client(api_key=API_KEY)
+genai.configure(api_key=API_KEY)
 
 
-def extract_with_intent(raw_text, mode):
-    print(f"🧠 AI switching to mode: {mode}")
-    client = get_ai_client()
+# AUTO-SELECTOR (Kept from previous fix)
+def get_working_model():
+    try:
+        my_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        preference = ['models/gemini-1.5-flash', 'models/gemini-1.5-flash-latest', 'models/gemini-pro']
+        for model_name in preference:
+            if model_name in my_models: return genai.GenerativeModel(model_name)
+        if my_models: return genai.GenerativeModel(my_models[0])
+    except:
+        pass
+    return genai.GenerativeModel('models/gemini-pro')
 
-    if "E-Commerce" in mode:
-        system_instruction = "You are an E-Commerce Scraping Bot. Extract Product Title, Price, Rating, Availability."
-    elif "Lead Generation" in mode:
-        system_instruction = "You are a Sales Lead Researcher. Extract Name, Job Title, Email, Phone."
-    elif "News" in mode:
-        system_instruction = "You are a News Aggregator. Extract Headline, Author, Date, Summary."
-    elif "Real Estate" in mode:
-        system_instruction = "You are a Real Estate Analyst. Extract Property Title, Price, Location, Specs."
-    else:
-        system_instruction = "You are a General Data Extractor. Identify lists and tables."
 
+model = get_working_model()
+
+
+def extract_with_intent(html_text):
+    if len(html_text) > 300000:
+        html_text = html_text[:300000]
+
+    # --- THE FIX: STRICT SCHEMA INSTRUCTIONS ---
     prompt = f"""
-    {system_instruction}
-    INSTRUCTIONS: Extract matching items into a JSON Array. Return ONLY valid JSON.
-    Raw Text: {raw_text[:15000]}
+    You are a Data Normalizer.
+
+    TASK: Extract a list of items from the text.
+
+    CRITICAL: You MUST normalize the JSON keys to these standard names:
+    1. **"title"**: The main name (Song Name, House Address, Product Title).
+    2. **"price"**: The cost or duration (e.g. "$500", "3:45").
+    3. **"subtitle"**: The secondary info (Artist Name, Realtor Name, Description).
+    4. **"link"**: The URL to the item.
+    5. **"image"**: The image URL.
+    6. **"details"**: Any other specific info (Beds, Stock Status) as a short string.
+
+    RULES:
+    - Output must be a PURE JSON List: `[ {{ "title": "...", "price": "..." }} ]`
+    - Do not make up keys. Map the website's data to these 6 keys.
+
+    CONTENT:
+    {html_text}
     """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type="application/json")
-        )
-        return response.text.strip().replace("```json", "").replace("```", "")
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+
+        # Cleanup
+        if text.startswith("```"): text = text.split("\n", 1)[-1]
+        if text.endswith("```"): text = text.rsplit("\n", 1)[0]
+
+        match = re.search(r'\[.*\]', text, re.DOTALL)
+        if match:
+            return match.group(0)
+
+        return "[]"
+
     except Exception as e:
-        print(f"AI Error: {e}")
+        print(f"❌ AI Error: {e}")
         return "[]"

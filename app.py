@@ -1,96 +1,62 @@
-# FILE: app.py
 import streamlit as st
 import pandas as pd
 import json
+import auth
 import scraper
 import ai_agent
-import storage
-import os
-from dotenv import load_dotenv
 
-# 1. Load the Vault
-load_dotenv()
+st.set_page_config(layout="wide", page_title="Universal Scraper (Final)")
 
-# 2. Page Config
-st.set_page_config(page_title="Pro Web Scraper", page_icon="🕵️‍♀️", layout="wide")
-
-SECRET_PASSWORD = os.getenv("APP_PASSWORD")
-
-# Safety fallback: If no password is set in .env, block access
-if not SECRET_PASSWORD:
-    st.error("⚠️ Security Error: APP_PASSWORD is missing")
+if not auth.check_password():
     st.stop()
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+st.title("🎓 Universal Scraper (Final Edition)")
+st.caption("DrissionPage (Stealth) + Gemini (Schema Enforcer)")
 
-if not st.session_state.authenticated:
-    st.title("🔒 Login Required")
-    password = st.text_input("Enter Password:", type="password")
-    if st.button("Login"):
-        if password == SECRET_PASSWORD:
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("Wrong password!")
-    st.stop()
+url = st.text_input("Target URL", placeholder="https://...")
+start = st.button("🚀 Run Scraper", type="primary")
 
+if start and url:
+    st.info("1. Launching Stealth Browser...")
+    html = scraper.get_website_content(url)
 
+    if html:
+        st.info(f"2. Analyzing {len(html)} chars with AI...")
+        json_str = ai_agent.extract_with_intent(html)
 
-st.title("🕵️‍♀️ Pro Web Scraper")
-st.markdown("##### *Select your goal, enter a link, and let AI do the rest.*")
-
-with st.sidebar:
-    st.header("⚙️ Settings")
-    scrape_mode = st.selectbox(
-        "🎯 Scraping Template:",
-        [
-            "🛒 E-Commerce (Products & Prices)",
-            "👥 Lead Generation (Emails & Contacts)",
-            "📰 News & Articles (Text & Dates)",
-            "🏠 Real Estate (Properties & Locations)",
-            "🧠 Universal / Auto-Detect"
-        ]
-    )
-    if st.button("🗑️ Clear Database"):
         try:
-            import os
+            data = json.loads(json_str)
+            if data:
+                st.success(f"✅ Found {len(data)} items!")
 
-            if os.path.exists("universal_scraper.db"):
-                os.remove("universal_scraper.db")
-                st.success("History cleared!")
-        except:
-            pass
+                # --- VISUAL CLEANUP ---
+                df = pd.DataFrame(data)
 
-url = st.text_input("Target Website URL:", placeholder="e.g., https://www.amazon.in/s?k=laptops")
+                # Reorder columns to put "Title" first
+                cols = ['title', 'price', 'subtitle', 'link', 'image', 'details']
+                # Only keep columns that actually exist in the data
+                existing_cols = [c for c in cols if c in df.columns]
+                df = df[existing_cols]
 
-if st.button("🚀 Start Scraping", type="primary", use_container_width=True):
-    if not url:
-        st.warning("Please enter a URL first.")
-    else:
-        with st.spinner("🕵️‍♀️ Accessing site & extracting data..."):
-            # 1. Scrape
-            raw_text = scraper.get_website_content(url)
+                # Configure the Table for Pretty Display
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    column_config={
+                        "title": st.column_config.TextColumn("Item Name", width="medium"),
+                        "price": st.column_config.TextColumn("Price/Value", width="small"),
+                        "image": st.column_config.ImageColumn("Preview"),
+                        "link": st.column_config.LinkColumn("Link"),
+                    },
+                    height=600
+                )
 
-            if raw_text:
-                with st.expander("Show Raw Scraper Text (Debug)"):
-                    st.write(raw_text[:1000])
-
-                # 2. AI Extract
-                json_result = ai_agent.extract_with_intent(raw_text, scrape_mode)
-
-                # 3. Show Results
-                try:
-                    data_list = json.loads(json_result)
-                    if data_list:
-                        st.success(f"🎉 Found {len(data_list)} items!")
-                        df = pd.DataFrame(data_list)
-                        st.dataframe(df, use_container_width=True)
-                        storage.save_dynamic_data(url, scrape_mode, json_result)
-                    else:
-                        st.warning("AI found no data.")
-                except Exception as e:
-                    st.error("Error parsing AI response.")
-                    st.text(json_result)
+                st.download_button("📥 Download CSV", df.to_csv(index=False), "scraped_data.csv")
             else:
-                st.error("❌ Failed to access website.")
+                st.warning("AI found no data. The page might be empty (blocked).")
+        except:
+            st.error("Failed to parse JSON.")
+            with st.expander("Debug Raw Output"):
+                st.text(json_str)
+    else:
+        st.error("Browser failed to load page.")

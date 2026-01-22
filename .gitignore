@@ -1,14 +1,18 @@
-# Secrets (NEVER UPLOAD)
+# Security
 .env
 .env.local
 
-# Python System Files
-__pycache__/
-*.pyc
+# Virtual Environment
 .venv/
 venv/
+env/
 
-# Local Data (Don't share scraped data)
+# Database & Local Data
 *.db
+*.sqlite3
 *.csv
-*.log
+__pycache__/
+
+# IDE Settings
+.idea/
+.vscode/
