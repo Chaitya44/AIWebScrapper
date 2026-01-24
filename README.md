@@ -1,4 +1,4 @@
-# 🕷️ AIWebscrapper (Educational Research)
+# 🕷️ AIWebscrapper : Gemini-Powered Universal Web Scraper
 
 **A Proof-of-Concept tool demonstrating the integration of Headless Browsing (DrissionPage) with Generative AI (Gemini) for unstructured data extraction.**
 
@@ -14,22 +14,21 @@
 4.  **No Commercial Use:** The code and any data derived from it must **not** be used for commercial purposes, resale, or competing products.
 5.  **Rate Limiting:** This tool includes artificial delays (`time.sleep`) to prevent server overload. Users should not modify these safety mechanisms to aggressively target servers (DDoS behavior).
 
----
 
-## 🚀 Overview
+🚀 Overview
 
 This project solves the "Universal Scraper" problem by combining two technologies:
 * **DrissionPage:** A browser automation tool used here to handle dynamic JavaScript rendering and study anti-bot behaviors (e.g., lazy loading).
 * **Google Gemini 1.5:** An AI model used to semantically understand HTML and normalize it into structured JSON (Schema Enforcement), eliminating the need for hardcoded CSS selectors.
 
-## 🛠️ Features
+🛠️ Features
 
 * **stealth_mode**: Implements browser fingerprint randomization for research.
 * **smart_wait**: Uses DOM-based waiting strategies instead of fixed timers.
 * **ai_parsing**: Extracts "Title", "Price", and "Image" automatically without regex.
 * **Privacy-First:** API keys are managed via environment variables and never logged.
 
-## ⚙️ Installation
+⚙️ Installation
 
 1.  Clone the repository:
     ```bash
@@ -57,12 +56,10 @@ This project solves the "Universal Scraper" problem by combining two technologie
     streamlit run app.py
     ```
 
-## 🛡️ License
+🛡️ License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 *Note: The MIT License grants permission for use, but does not override the Terms of Service of target websites. Use responsibly.*
-
----
 
 **If you are a copyright holder or website administrator and wish to have specific scraping capabilities removed from this educational tool, please open an Issue.**
