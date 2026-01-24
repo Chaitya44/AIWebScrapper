@@ -1,19 +1,6 @@
 # 🕷️ AIWebscrapper : Gemini-Powered Universal Web Scraper
 
-**A Proof-of-Concept tool demonstrating the integration of Headless Browsing (DrissionPage) with Generative AI (Gemini) for unstructured data extraction.**
-
----
-
-## ⚠️ Legal Disclaimer & Ethical Use
-
-**READ BEFORE USING:**
-
-1.  **Educational Purpose Only:** This repository is strictly for educational and research purposes. It is designed to demonstrate how LLMs can parse HTML structures. It is **not** intended for large-scale data harvesting, commercial scraping, or copyright infringement.
-2.  **No Liability:** The developer (Chaitya44) assumes no liability for how this tool is used. Any legal consequences arising from the use of this tool are the sole responsibility of the user.
-3.  **Respect Terms of Service:** Users are strictly advised to review and adhere to the *Terms of Service* (ToS) and *Robots.txt* of any website they interact with.
-4.  **No Commercial Use:** The code and any data derived from it must **not** be used for commercial purposes, resale, or competing products.
-5.  **Rate Limiting:** This tool includes artificial delays (`time.sleep`) to prevent server overload. Users should not modify these safety mechanisms to aggressively target servers (DDoS behavior).
-
+AIWebScraper is a Python-based tool that uses Google Gemini AI and DrissionPage to extract structured JSON data from any website. Unlike traditional scrapers, it uses LLMs to understand content, allowing it to bypass anti-bot protections and parse dynamic HTML automatically.
 
 🚀 Overview
 
@@ -55,6 +42,17 @@ This project solves the "Universal Scraper" problem by combining two technologie
     ```bash
     streamlit run app.py
     ```
+
+## ⚠️ Legal Disclaimer & Ethical Use
+
+**READ BEFORE USING:**
+
+1.  **Educational Purpose Only:** This repository is strictly for educational and research purposes. It is designed to demonstrate how LLMs can parse HTML structures. It is **not** intended for large-scale data harvesting, commercial scraping, or copyright infringement.
+2.  **No Liability:** The developer (Chaitya44) assumes no liability for how this tool is used. Any legal consequences arising from the use of this tool are the sole responsibility of the user.
+3.  **Respect Terms of Service:** Users are strictly advised to review and adhere to the *Terms of Service* (ToS) and *Robots.txt* of any website they interact with.
+4.  **No Commercial Use:** The code and any data derived from it must **not** be used for commercial purposes, resale, or competing products.
+5.  **Rate Limiting:** This tool includes artificial delays (`time.sleep`) to prevent server overload. Users should not modify these safety mechanisms to aggressively target servers (DDoS behavior).
+
 
 🛡️ License
 
