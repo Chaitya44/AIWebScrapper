@@ -1,4 +1,4 @@
-# 🕷️ AIWebscrapper : Gemini-Powered Universal Web Scraper
+# 🕷️ AI Webscrapper : Gemini-Powered Universal Web Scraper
 
 AIWebScraper is a Python-based tool that uses Google Gemini AI and DrissionPage to extract structured JSON data from any website. Unlike traditional scrapers, it uses LLMs to understand content, allowing it to bypass anti-bot protections and parse dynamic HTML automatically.
 
