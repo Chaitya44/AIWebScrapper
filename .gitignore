@@ -1,18 +1,31 @@
-# Security
-.env
-.env.local
-
-# Virtual Environment
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
 .venv/
 venv/
 env/
 
-# Database & Local Data
-*.db
-*.sqlite3
-*.csv
-__pycache__/
+# Environment
+.env
 
-# IDE Settings
+# IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# Next.js
+nexus-scraper-ui/node_modules/
+nexus-scraper-ui/.next/
+nexus-scraper-ui/out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gemini
+.gemini/
+
+# Test files
+test*.py

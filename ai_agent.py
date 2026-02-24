@@ -1,74 +1,24 @@
-import os
-import json
-import re
-import google.generativeai as genai
-from dotenv import load_dotenv
+"""
+ai_agent.py - Thin wrapper over GeminiOrganizer.
+All AI logic lives in gemini_organizer.py — this module provides
+backward-compatible entry points for the API server.
+"""
 
-load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+from gemini_organizer import GeminiOrganizer, OrganizedResult
 
-if not API_KEY:
-    print("❌ Error: GEMINI_API_KEY is missing from .env")
-
-genai.configure(api_key=API_KEY)
+# Singleton organizer instance
+_organizer = GeminiOrganizer()
 
 
-# AUTO-SELECTOR (Kept from previous fix)
-def get_working_model():
-    try:
-        my_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        preference = ['models/gemini-1.5-flash', 'models/gemini-1.5-flash-latest', 'models/gemini-pro']
-        for model_name in preference:
-            if model_name in my_models: return genai.GenerativeModel(model_name)
-        if my_models: return genai.GenerativeModel(my_models[0])
-    except:
-        pass
-    return genai.GenerativeModel('models/gemini-pro')
-
-
-model = get_working_model()
-
-
-def extract_with_intent(html_text):
-    if len(html_text) > 300000:
-        html_text = html_text[:300000]
-
-    # --- THE FIX: STRICT SCHEMA INSTRUCTIONS ---
-    prompt = f"""
-    You are a Data Normalizer.
-
-    TASK: Extract a list of items from the text.
-
-    CRITICAL: You MUST normalize the JSON keys to these standard names:
-    1. **"title"**: The main name (Song Name, House Address, Product Title).
-    2. **"price"**: The cost or duration (e.g. "$500", "3:45").
-    3. **"subtitle"**: The secondary info (Artist Name, Realtor Name, Description).
-    4. **"link"**: The URL to the item.
-    5. **"image"**: The image URL.
-    6. **"details"**: Any other specific info (Beds, Stock Status) as a short string.
-
-    RULES:
-    - Output must be a PURE JSON List: `[ {{ "title": "...", "price": "..." }} ]`
-    - Do not make up keys. Map the website's data to these 6 keys.
-
-    CONTENT:
-    {html_text}
+def extract_structured(html_text: str) -> OrganizedResult:
     """
+    Primary entry point.  Returns an OrganizedResult with .schema, .data, .to_api_response().
+    """
+    return _organizer.organize(html_text)
 
-    try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
 
-        # Cleanup
-        if text.startswith("```"): text = text.split("\n", 1)[-1]
-        if text.endswith("```"): text = text.rsplit("\n", 1)[0]
-
-        match = re.search(r'\[.*\]', text, re.DOTALL)
-        if match:
-            return match.group(0)
-
-        return "[]"
-
-    except Exception as e:
-        print(f"❌ AI Error: {e}")
-        return "[]"
+# Legacy helpers (kept for backward compatibility with test scripts)
+def extract_multi_entity(html_text: str) -> dict:
+    """Returns just the data dict (no schema). Used by test2.py."""
+    result = _organizer.organize(html_text)
+    return result.data

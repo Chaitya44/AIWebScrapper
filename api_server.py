@@ -1,0 +1,106 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, Dict, Any, List
+import asyncio
+from datetime import datetime
+import json
+import traceback
+import scraper
+import ai_agent
+
+app = FastAPI(title="NEXUS SCRAPER API", version="3.0.0")
+
+# CORS — allow any localhost port for dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ── Request / Response Models ────────────────────────────────────────────────
+
+class ScraperConfig(BaseModel):
+    stealthMode: bool = True
+    headlessMode: bool = False  # Visible browser = more trusted by websites
+    geminiParsing: bool = True
+    deepScroll: bool = False
+
+
+class ScrapeRequest(BaseModel):
+    url: str
+    config: ScraperConfig = ScraperConfig()
+
+
+# ── Endpoints ────────────────────────────────────────────────────────────────
+
+@app.get("/api/health")
+async def health_check():
+    return {
+        "status": "online",
+        "service": "NEXUS SCRAPER API",
+        "version": "3.0.0",
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/api/scrape")
+async def scrape_url(request: ScrapeRequest):
+    print(f"\n{'='*60}")
+    print(f"[API] Scrape request: {request.url}")
+    print(f"[API] Config: headless={request.config.headlessMode}, stealth={request.config.stealthMode}")
+    print(f"{'='*60}")
+
+    try:
+        loop = asyncio.get_event_loop()
+
+        # ── Phase 1: Scrape the page ─────────────────────────────────────
+        print("[API] Phase 1: Scraping...")
+        html = await loop.run_in_executor(
+            None,
+            scraper.get_website_content,
+            request.url,
+            request.config.headlessMode
+        )
+
+        if not html:
+            raise HTTPException(status_code=500, detail="Failed to fetch website content. The page may be blocking scrapers or the URL may be invalid.")
+
+        print(f"[API] HTML retrieved: {len(html):,} chars")
+
+        # ── Phase 2: AI Extraction via GeminiOrganizer ───────────────────
+        print("[API] Phase 2: Gemini AI extraction (schema-aware)...")
+        result = await loop.run_in_executor(None, ai_agent.extract_structured, html)
+
+        api_payload = result.to_api_response()
+        print(f"[API] ✅ Extracted {api_payload['entityCount']} categories, {api_payload['totalItems']} items")
+
+        return {
+            "status": "success",
+            **api_payload,
+            "timestamp": datetime.now().isoformat(),
+            "url": request.url
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[API] ❌ Error: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    print("\n" + "=" * 60)
+    print("[API] NEXUS SCRAPER API v3.0 — Schema-Aware Edition")
+    print("=" * 60)
+    print("[INFO] API URL:       http://localhost:8000")
+    print("[INFO] Health Check:  http://localhost:8000/api/health")
+    print("[INFO] Scrape:        POST http://localhost:8000/api/scrape")
+    print("=" * 60 + "\n")
+
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

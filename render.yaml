@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: aria-backend
+    runtime: docker
+    plan: free
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RENDER
+        value: "true"
+      - key: CHROMIUM_PATH
+        value: /usr/bin/chromium

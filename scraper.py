@@ -1,3 +1,14 @@
+"""
+scraper.py — Clean DrissionPage Scraper
+Based on the original AI-WebScraper project by Chaitya44.
+
+Flow:
+  1. Launch Chromium with anti-detection tricks (randomized viewport, no webdriver flag)
+  2. Scroll to trigger lazy loading
+  3. Clean HTML with BeautifulSoup
+  4. Return clean HTML → GeminiOrganizer handles the rest
+"""
+
 from DrissionPage import ChromiumPage, ChromiumOptions
 from bs4 import BeautifulSoup, Comment
 import tempfile
@@ -5,78 +16,90 @@ import shutil
 import random
 import time
 import os
+import traceback
 
 
-def get_website_content(url):
-    print(f"🕵️ Student Stealth Mode: {url}")
+def get_website_content(url: str, headless: bool = False) -> str:
+    """
+    Fetch a URL and return cleaned HTML text.
+    Returns None on total failure.
+    """
+    print(f"\n🕵️ Stealth Scraping: {url}")
 
-    # TRICK 1: Create a temporary user profile
-    # This makes every run look like a "fresh" computer to the website.
+    # Auto-detect server environment — force headless if no display
+    if os.environ.get("RENDER") or os.environ.get("CHROMIUM_PATH"):
+        headless = True
+        print("[Scraper] Server detected — forcing headless mode")
+
+    # Create a temporary user profile — every run looks like a fresh computer
     temp_user_data = tempfile.mkdtemp()
 
-    # TRICK 2: Randomize the Viewport (Window Size)
-    # Bots usually have standard sizes (800x600). We randomize it to look human.
+    # Randomize the viewport — bots usually have standard sizes
     width = random.randint(1024, 1920)
     height = random.randint(768, 1080)
 
     co = ChromiumOptions()
-    co.headless(False)  # MUST BE FALSE. Visible windows are trusted more.
+    co.headless(headless)
     co.set_argument(f'--window-size={width},{height}')
     co.set_argument(f'--user-data-dir={temp_user_data}')
     co.set_argument('--no-first-run')
+    co.set_argument('--disable-blink-features=AutomationControlled')
+    co.set_argument('--no-sandbox')
+    co.set_argument('--disable-dev-shm-usage')
     co.auto_port()
+
+    # Set Chromium binary path from environment (for Docker/Render)
+    chromium_path = os.environ.get("CHROMIUM_PATH")
+    if chromium_path:
+        co.set_browser_path(chromium_path)
 
     page = None
     try:
         page = ChromiumPage(addr_or_opts=co)
 
-        # TRICK 3: Anti-Detection Scripts
-        # These remove the "I am a robot" flags that Chrome sends by default.
+        # Anti-detection: remove the webdriver flag
         page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
         page.get(url)
 
-        # TRICK 4: "Human" Interaction Logic
-        # Instead of a fixed sleep, we wait for the network to stop moving.
+        # Wait for page to stabilize
         print("⏳ Waiting for page to stabilize...")
-
-        # Dynamic Wait: Wait 2s, then scroll, then wait again.
-        # This triggers "Lazy Loading" on Zillow/Spotify.
         time.sleep(3)
 
+        # Scroll to trigger lazy loading
         print("⬇️ Scrolling to wake up the page...")
         for _ in range(4):
-            page.scroll.down(400)  # Small scroll, like a mouse wheel
-            time.sleep(random.uniform(0.5, 1.2))  # Random pause
+            page.scroll.down(400)
+            time.sleep(random.uniform(0.5, 1.2))
 
-        # Check for empty page (common block)
+        # If page looks empty, wait longer
         if len(page.html) < 2000:
             print("⚠️ Page looks empty. Waiting longer...")
             time.sleep(5)
 
-        # FINAL GRAB
+        # Grab the HTML
         raw_html = page.html
 
-        # CLEANUP: Remove junk to save AI tokens
+        # Clean with BeautifulSoup — remove only truly useless tags
         soup = BeautifulSoup(raw_html, "html.parser")
-        for tag in soup(["script", "style", "svg", "img", "video", "header", "footer", "iframe", "meta"]):
+        for tag in soup(["script", "style", "svg", "iframe", "noscript"]):
             tag.decompose()
 
         for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
             comment.extract()
 
-        clean_html = str(soup.body)
+        clean_html = str(soup.body or soup)
         clean_html = " ".join(clean_html.split())
 
-        print(f"✅ Success! Captured {len(clean_html)} chars.")
+        print(f"✅ Captured {len(clean_html):,} chars")
         return clean_html[:300000]
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Scraper Error: {e}")
+        traceback.print_exc()
         return None
 
     finally:
-        # cleanup
         if page:
             try:
                 page.quit()

@@ -1,0 +1,402 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ── BASE LAYER ──────────────────────────────────────────────── */
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a0a0f;
+    color: #e4e4e7;
+    overflow-x: hidden;
+  }
+
+  /* Animated mesh gradient background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 60% at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+    animation: meshShift 20s ease-in-out infinite alternate;
+  }
+
+  /* Subtle noise texture overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  @keyframes meshShift {
+    0% {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+    }
+
+    100% {
+      background:
+        radial-gradient(ellipse 70% 60% at 70% 30%, rgba(16, 185, 129, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 50% at 20% 70%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 60% 60%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    }
+  }
+}
+
+/* ── GLASS CARDS ─────────────────────────────────────────────── */
+@layer components {
+  .glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-card-hover:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  }
+
+  /* Gradient border effect */
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.15));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* ── DATA TABLES ─────────────────────────────────────────────── */
+@layer utilities {
+  .nexus-table th {
+    color: #94a3b8 !important;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+  }
+
+  .nexus-table td {
+    color: #d1d5db !important;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .nexus-table a {
+    color: #67e8f9 !important;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nexus-table a:hover {
+    color: #a5f3fc !important;
+  }
+
+  .nexus-table tbody tr {
+    transition: background-color 0.15s;
+  }
+
+  .nexus-table tbody tr:hover td {
+    background-color: rgba(16, 185, 129, 0.03);
+  }
+}
+
+/* ── GLOW EFFECTS ────────────────────────────────────────────── */
+.glow-emerald {
+  box-shadow:
+    0 0 15px rgba(16, 185, 129, 0.1),
+    0 0 40px rgba(16, 185, 129, 0.05),
+    inset 0 0 15px rgba(16, 185, 129, 0.03);
+}
+
+/* Floating orb accent */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: -1;
+  animation: float 15s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(30px, -20px) scale(1.1);
+  }
+
+  100% {
+    transform: translate(-20px, 10px) scale(0.95);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER & NAV — shared styles with light overrides
+   ═══════════════════════════════════════════════════════════════ */
+
+.header-bar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.nav-link {
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  color: #d1d5db;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-link-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — comprehensive overrides
+   ═══════════════════════════════════════════════════════════════ */
+
+html.light body {
+  background: #f5f7fa;
+  color: #1a1a2e;
+}
+
+/* Softer gradient mesh for light */
+html.light body::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+}
+
+html.light body::after {
+  opacity: 0.01;
+}
+
+/* Header */
+html.light .header-bar {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+html.light .nav-link {
+  color: #6b7280;
+}
+
+html.light .nav-link:hover {
+  color: #111827;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+html.light .nav-link-active {
+  color: #111827;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+html.light .theme-toggle-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .theme-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Glass cards */
+html.light .glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+html.light .glass-card-hover:hover {
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+html.light .gradient-border::before {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.12), rgba(139, 92, 246, 0.08));
+}
+
+html.light .glow-emerald {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 20px rgba(16, 185, 129, 0.06);
+}
+
+/* Orbs — very subtle in light */
+html.light .orb {
+  opacity: 0.03;
+}
+
+/* Tables */
+html.light .nexus-table th {
+  color: #475569 !important;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .nexus-table td {
+  color: #1e293b !important;
+  border-bottom-color: rgba(0, 0, 0, 0.04);
+}
+
+html.light .nexus-table a {
+  color: #0891b2 !important;
+}
+
+html.light .nexus-table a:hover {
+  color: #0e7490 !important;
+}
+
+html.light .nexus-table tbody tr:hover td {
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+/* Scrollbar */
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ── Light mode: Text color overrides ───────────────────────── */
+
+/* Hero heading keeps its emerald gradient — looks good on both themes */
+/* Subtext */
+html.light h1+p,
+html.light .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+html.light .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+html.light .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+html.light .text-gray-700 {
+  color: #374151 !important;
+}
+
+/* White text → near-black */
+html.light .text-white {
+  color: #111827 !important;
+}
+
+/* Input field */
+html.light input[type="text"] {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #111827 !important;
+}
+
+html.light input[type="text"]::placeholder {
+  color: #9ca3af !important;
+}
+
+html.light input[type="text"]:focus {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(0, 0, 0, 0.01) !important;
+}
+
+/* Terminal area */
+html.light .bg-\[#08080d\] {
+  background: #f0f1f3 !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .bg-\[#08080d\] .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+/* Timer glow — visible in both modes */
+html.light .text-emerald-400 {
+  color: #059669 !important;
+}
+
+html.light .text-emerald-500 {
+  color: #10b981 !important;
+}
+
+html.light .text-emerald-600 {
+  color: #059669 !important;
+}
+
+html.light .text-cyan-400\/80 {
+  color: #0891b2 !important;
+}
+
+/* Error state */
+html.light .text-red-400 {
+  color: #dc2626 !important;
+}
+
+html.light .text-red-400\/60 {
+  color: rgba(220, 38, 38, 0.6) !important;
+}
