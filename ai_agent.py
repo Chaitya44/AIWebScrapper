@@ -10,11 +10,12 @@ from gemini_organizer import GeminiOrganizer, OrganizedResult
 _organizer = GeminiOrganizer()
 
 
-def extract_structured(html_text: str) -> OrganizedResult:
+def extract_structured(html_text: str, api_key: str = None) -> OrganizedResult:
     """
-    Primary entry point.  Returns an OrganizedResult with .schema, .data, .to_api_response().
+    Primary entry point. Returns an OrganizedResult with .schema, .data, .to_api_response().
+    api_key: optional user-provided Gemini key (BYOK).
     """
-    return _organizer.organize(html_text)
+    return _organizer.organize(html_text, api_key=api_key)
 
 
 # Legacy helpers (kept for backward compatibility with test scripts)

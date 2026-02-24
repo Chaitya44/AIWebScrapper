@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Search, Download, AlertTriangle, Loader2,
     Database, Table2, Globe, Zap, Clock,
-    ArrowRight, Trash2, ExternalLink
+    ArrowRight, Trash2, ExternalLink, Key, Eye, EyeOff, Settings
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -121,13 +121,18 @@ export default function NexusDashboard() {
     const [logs, setLogs] = useState<string[]>([]);
     const [elapsed, setElapsed] = useState(0);
     const [history, setHistory] = useState<HistoryEntry[]>([]);
+    const [geminiKey, setGeminiKey] = useState("");
+    const [showKey, setShowKey] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Load history on mount
+    // Load history + API key on mount
     useEffect(() => {
         try {
             const saved = localStorage.getItem(HISTORY_KEY);
             if (saved) setHistory(JSON.parse(saved));
+            const savedKey = localStorage.getItem("aria_gemini_key");
+            if (savedKey) setGeminiKey(savedKey);
         } catch { }
     }, []);
 
@@ -182,6 +187,7 @@ export default function NexusDashboard() {
                 body: JSON.stringify({
                     url: url.trim(),
                     config: { stealthMode: true, headlessMode: false, geminiParsing: true },
+                    geminiKey: geminiKey || undefined,
                 }),
             });
 
@@ -318,6 +324,70 @@ export default function NexusDashboard() {
                     className="glass-card gradient-border rounded-2xl overflow-hidden glow-emerald"
                 >
                     <div className="p-6 md:p-8 space-y-5">
+                        {/* API Key Settings */}
+                        <div>
+                            <button
+                                onClick={() => setShowSettings(!showSettings)}
+                                className="flex items-center space-x-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-3"
+                            >
+                                <Settings size={13} className={showSettings ? "text-emerald-400" : ""} />
+                                <span>API Key</span>
+                                {geminiKey ? (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-1" />
+                                ) : (
+                                    <span className="text-red-400 text-[10px] ml-1">required</span>
+                                )}
+                            </button>
+                            <AnimatePresence>
+                                {showSettings && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-4 space-y-3">
+                                            <div className="flex items-center space-x-2">
+                                                <Key size={14} className="text-emerald-500 flex-shrink-0" />
+                                                <p className="text-gray-400 text-xs">
+                                                    Enter your Gemini API key.{" "}
+                                                    <a
+                                                        href="https://aistudio.google.com/apikey"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-emerald-500/70 hover:text-emerald-400 underline transition-colors"
+                                                    >
+                                                        Get a free key →
+                                                    </a>
+                                                </p>
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type={showKey ? "text" : "password"}
+                                                    value={geminiKey}
+                                                    onChange={(e) => {
+                                                        setGeminiKey(e.target.value);
+                                                        localStorage.setItem("aria_gemini_key", e.target.value);
+                                                    }}
+                                                    placeholder="AIza..."
+                                                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg py-2.5 pl-3 pr-10 text-white font-mono text-xs focus:outline-none focus:border-emerald-500/30 transition-all placeholder:text-gray-700"
+                                                />
+                                                <button
+                                                    onClick={() => setShowKey(!showKey)}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors"
+                                                >
+                                                    {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                </button>
+                                            </div>
+                                            <p className="text-gray-600 text-[10px]">
+                                                🔒 Stored locally in your browser. Never sent to third parties.
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
                         {/* URL Input */}
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">

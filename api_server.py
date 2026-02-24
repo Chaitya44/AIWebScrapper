@@ -33,6 +33,7 @@ class ScraperConfig(BaseModel):
 class ScrapeRequest(BaseModel):
     url: str
     config: ScraperConfig = ScraperConfig()
+    geminiKey: str = None  # BYOK: user-provided Gemini API key
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -73,9 +74,15 @@ async def scrape_url(request: ScrapeRequest):
 
         # ── Phase 2: AI Extraction via GeminiOrganizer ───────────────────
         print("[API] Phase 2: Gemini AI extraction (schema-aware)...")
-        result = await loop.run_in_executor(None, ai_agent.extract_structured, html)
+        # BYOK: pass user key (never logged)
+        result = await loop.run_in_executor(
+            None,
+            lambda: ai_agent.extract_structured(html, api_key=request.geminiKey)
+        )
 
         api_payload = result.to_api_response()
+        if api_payload['entityCount'] == 0 and api_payload['totalItems'] == 0 and not request.geminiKey:
+            raise HTTPException(status_code=400, detail="No API key provided. Please enter your Gemini API key in the settings.")
         print(f"[API] ✅ Extracted {api_payload['entityCount']} categories, {api_payload['totalItems']} items")
 
         return {

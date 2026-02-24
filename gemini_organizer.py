@@ -136,11 +136,17 @@ class GeminiOrganizer:
         html = " ".join(html.split())
         return html[:self.max_chars]
 
-    def organize(self, raw_html: str) -> "OrganizedResult":
+    def organize(self, raw_html: str, api_key: str = None) -> "OrganizedResult":
         """
         Core method. Feed HTML in, get a fully-typed, schema-aligned result out.
         Uses model fallback chain if quota is hit.
+        api_key: optional user-provided key (BYOK). Falls back to env var.
         """
+        key = api_key or API_KEY
+        if not key:
+            print("[ORGANIZER] ❌ No API key provided (neither user key nor GEMINI_API_KEY env var)")
+            return OrganizedResult({}, {})
+
         start = time.time()
         clean_html = self._preprocess_html(raw_html)
         print(f"[ORGANIZER] HTML: {len(raw_html):,} → {len(clean_html):,} chars")
@@ -150,7 +156,7 @@ class GeminiOrganizer:
         last_error = None
         for model_name in MODEL_CHAIN:
             try:
-                client = genai.Client(api_key=API_KEY)
+                client = genai.Client(api_key=key)
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
