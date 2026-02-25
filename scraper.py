@@ -91,13 +91,14 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
         opts = Options()
         opts.add_argument("--headless")
         opts.add_argument("--no-sandbox")
-        opts.add_argument("--disable-dev-shm-usage")
+        opts.add_argument("--disable-dev-shm-usage")  # CRITICAL for Docker: prevents "Timed out receiving message from renderer"
         opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-extensions")
-        opts.add_argument("--single-process")
+        opts.add_argument("--disable-browser-side-navigation")  # Prevents renderer timeouts
         opts.add_argument("--window-size=1280,720")
         opts.add_argument("--disable-blink-features=AutomationControlled")
         opts.add_argument(f"--user-data-dir={temp_user_data}")
+        opts.page_load_strategy = 'eager'  # Don't wait for heavy images/iframes to load
 
         chromium_path = os.environ.get("CHROMIUM_PATH")
         if chromium_path:
@@ -110,9 +111,15 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
         print(f"🌐 Loading {url}...")
-        driver.get(url)
+        try:
+            from selenium.common.exceptions import TimeoutException
+            driver.get(url)
+        except TimeoutException:
+            print("⚠️ Page load timeout (Render limits) — using partial content")
+        except Exception as load_err:
+            print(f"⚠️ Page load warning: {load_err}")
 
-        # Verify navigation succeeded
+        # Verify navigation succeeded (if it didn't completely fail)
         current = driver.current_url
         if current in ("about:blank", "data:,", "chrome://newtab/"):
             print(f"⚠️ Navigation failed — stuck on {current}")
