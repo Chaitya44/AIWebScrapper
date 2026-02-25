@@ -102,63 +102,36 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     api_responses = []
     total_api_bytes = 0
     use_listener = not is_server  # Disable listener on server to avoid issues
-    chrome_proc = None
 
     if is_server:
-        # ── SERVER MODE: launch Chrome manually, then connect ──
-        # This avoids the WebSocket 404 race condition
-        import subprocess
-        import urllib.request
-
+        # Server: use fixed port and explicit debugging address
         debug_port = random.randint(9200, 9300)
-        chrome_cmd = [
-            chromium_path or "chromium",
-            f"--remote-debugging-port={debug_port}",
-            "--headless",
-            f"--user-data-dir={temp_user_data}",
-            f"--window-size={width},{height}",
-            "--no-first-run",
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--disable-software-rasterizer",
-            "--disable-features=VizDisplayCompositor",
-            "--disable-blink-features=AutomationControlled",
-            "about:blank",
-        ]
+        co.set_argument(f'--remote-debugging-port={debug_port}')
+        co.set_argument('--remote-debugging-address=0.0.0.0')
+        co.set_local_port(debug_port)
+    else:
+        co.auto_port()
 
-        print(f"🚀 Launching Chromium on port {debug_port}...")
-        chrome_proc = subprocess.Popen(chrome_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-        # Poll until DevTools is ready
-        devtools_ready = False
-        for i in range(15):  # 15 seconds max
-            try:
-                resp = urllib.request.urlopen(f"http://127.0.0.1:{debug_port}/json/version", timeout=1)
-                if resp.status == 200:
-                    devtools_ready = True
-                    print(f"✅ DevTools ready on port {debug_port}")
-                    break
-            except Exception:
-                pass
-            time.sleep(1)
-
-        if not devtools_ready:
-            print("❌ Chrome DevTools never became ready")
-            if chrome_proc:
-                chrome_proc.kill()
-            return None, ""
-
-        # Connect DrissionPage to the running Chrome via address
-        print(f"🔗 Connecting DrissionPage to 127.0.0.1:{debug_port}...")
+    # Try to connect — with retries for server cold starts
+    max_retries = 3 if is_server else 1
+    for attempt in range(max_retries):
+        try:
+            page = ChromiumPage(addr_or_opts=co)
+            print(f"✅ Browser connected (attempt {attempt + 1})")
+            break
+        except Exception as conn_err:
+            print(f"⚠️ Browser attempt {attempt + 1}/{max_retries}: {conn_err}")
+            if attempt < max_retries - 1:
+                # Kill any zombie chrome processes and retry
+                if is_server:
+                    import subprocess
+                    subprocess.run(['pkill', '-f', 'chromium'], capture_output=True)
+                    time.sleep(3)
+            else:
+                print(f"❌ Browser failed after {max_retries} attempts")
+                return None, ""
 
     try:
-        if is_server:
-            # Connect to the manually launched Chrome
-            page = ChromiumPage(addr_or_opts=f'127.0.0.1:{debug_port}')
-        else:
-            co.auto_port()
-            page = ChromiumPage(addr_or_opts=co)
 
         # Anti-detection: remove the webdriver flag
         page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -252,12 +225,6 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
         if page:
             try:
                 page.quit()
-            except:
-                pass
-        if chrome_proc:
-            try:
-                chrome_proc.kill()
-                chrome_proc.wait(timeout=5)
             except:
                 pass
         try:
