@@ -79,11 +79,7 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     height = random.randint(768, 1080)
 
     co = ChromiumOptions()
-    if is_server:
-        # Server/Docker: use new headless mode and conservative flags
-        co.set_argument('--headless=new')
-    else:
-        co.headless(headless)
+    co.headless(headless if not is_server else True)
     co.set_argument(f'--window-size={width},{height}')
     co.set_argument(f'--user-data-dir={temp_user_data}')
     co.set_argument('--no-first-run')
@@ -92,6 +88,7 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     co.set_argument('--disable-dev-shm-usage')
     co.set_argument('--disable-gpu')
     co.set_argument('--disable-software-rasterizer')
+    co.set_argument('--disable-features=VizDisplayCompositor')
     # --single-process crashes in Docker; only use locally
     if not is_server:
         co.set_argument('--single-process')
@@ -105,11 +102,23 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     page = None
     api_responses = []
     total_api_bytes = 0
-    use_listener = True  # Will be disabled if it causes issues
+    use_listener = not is_server  # Disable listener on server to avoid issues
+
+    # Retry browser connection (cold starts can fail on first attempt)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            page = ChromiumPage(addr_or_opts=co)
+            break  # Connected successfully
+        except Exception as conn_err:
+            print(f"⚠️ Browser connection attempt {attempt + 1}/{max_retries} failed: {conn_err}")
+            if attempt < max_retries - 1:
+                time.sleep(3)  # Wait before retry
+            else:
+                print(f"❌ Browser failed to connect after {max_retries} attempts")
+                return None, ""
 
     try:
-        page = ChromiumPage(addr_or_opts=co)
-
         # Anti-detection: remove the webdriver flag
         page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
