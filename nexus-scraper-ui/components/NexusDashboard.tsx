@@ -195,6 +195,13 @@ export default function NexusDashboard() {
             return;
         }
 
+        // ── API Key Validation ────────────────────────────────────
+        if (!geminiKey.trim()) {
+            setError("Please enter your Gemini API key first. Click the ⚙ API Key button above to add it.");
+            setShowSettings(true);  // Auto-expand the settings panel
+            return;
+        }
+
         setLoading(true);
         setResult(null);
         setError(null);

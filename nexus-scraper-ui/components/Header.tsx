@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sun, Moon, User, Sparkles, LogOut } from "lucide-react";
+import { Sun, Moon, User, Sparkles, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
@@ -11,6 +11,7 @@ export default function Header() {
     const { user, signOut } = useAuth();
     const [theme, setTheme] = useState<"dark" | "light">("dark");
     const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const saved = localStorage.getItem("aria_theme") as "dark" | "light" | null;
@@ -19,6 +20,17 @@ export default function Header() {
             document.documentElement.classList.toggle("light", saved === "light");
         }
     }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setShowMenu(false);
+            }
+        };
+        if (showMenu) document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [showMenu]);
 
     const toggleTheme = () => {
         const next = theme === "dark" ? "light" : "dark";
@@ -75,13 +87,18 @@ export default function Header() {
 
                     {user ? (
                         /* Logged in — show avatar with dropdown */
-                        <div className="relative">
+                        <div className="relative" ref={menuRef}>
                             <button
                                 onClick={() => setShowMenu(!showMenu)}
                                 className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-200"
                             >
                                 {user.photoURL ? (
-                                    <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                                    <img
+                                        src={user.photoURL}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                        referrerPolicy="no-referrer"
+                                    />
                                 ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
                                         <span className="text-emerald-400 text-xs font-bold">
@@ -92,12 +109,42 @@ export default function Header() {
                             </button>
 
                             {showMenu && (
-                                <div className="absolute right-0 top-12 w-56 glass-card rounded-xl border border-white/[0.06] p-3 space-y-2 shadow-xl z-50">
-                                    <div className="px-2 py-1">
-                                        <p className="text-white text-sm font-medium truncate">{user.displayName || "User"}</p>
-                                        <p className="text-gray-500 text-xs truncate">{user.email}</p>
+                                <div className="absolute right-0 top-12 w-56 glass-card rounded-xl border border-white/[0.06] p-3 space-y-1 shadow-xl z-50">
+                                    {/* User info */}
+                                    <div className="flex items-center space-x-3 px-2 py-2">
+                                        {user.photoURL ? (
+                                            <img
+                                                src={user.photoURL}
+                                                alt=""
+                                                className="w-8 h-8 rounded-lg object-cover"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-emerald-400 text-xs font-bold">
+                                                    {user.displayName?.charAt(0) || "?"}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="min-w-0">
+                                            <p className="text-white text-sm font-medium truncate">{user.displayName || "User"}</p>
+                                            <p className="text-gray-500 text-[11px] truncate">{user.email}</p>
+                                        </div>
                                     </div>
+
                                     <div className="h-px bg-white/[0.06]" />
+
+                                    {/* Profile link */}
+                                    <Link
+                                        href="/profile"
+                                        onClick={() => setShowMenu(false)}
+                                        className="w-full flex items-center space-x-2 px-2 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.04] transition-colors text-sm"
+                                    >
+                                        <Settings size={14} />
+                                        <span>Account Settings</span>
+                                    </Link>
+
+                                    {/* Sign out */}
                                     <button
                                         onClick={async () => {
                                             setShowMenu(false);
