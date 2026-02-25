@@ -72,12 +72,18 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     # Create a temporary user profile — every run looks like a fresh computer
     temp_user_data = tempfile.mkdtemp()
 
+    is_server = os.environ.get("RENDER") or os.environ.get("CHROMIUM_PATH")
+
     # Randomize the viewport — bots usually have standard sizes
     width = random.randint(1024, 1920)
     height = random.randint(768, 1080)
 
     co = ChromiumOptions()
-    co.headless(headless)
+    if is_server:
+        # Server/Docker: use new headless mode and conservative flags
+        co.set_argument('--headless=new')
+    else:
+        co.headless(headless)
     co.set_argument(f'--window-size={width},{height}')
     co.set_argument(f'--user-data-dir={temp_user_data}')
     co.set_argument('--no-first-run')
@@ -86,7 +92,9 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     co.set_argument('--disable-dev-shm-usage')
     co.set_argument('--disable-gpu')
     co.set_argument('--disable-software-rasterizer')
-    co.set_argument('--single-process')
+    # --single-process crashes in Docker; only use locally
+    if not is_server:
+        co.set_argument('--single-process')
     co.auto_port()
 
     # Set Chromium binary path from environment (for Docker/Render)
@@ -97,6 +105,7 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     page = None
     api_responses = []
     total_api_bytes = 0
+    use_listener = True  # Will be disabled if it causes issues
 
     try:
         page = ChromiumPage(addr_or_opts=co)
@@ -110,7 +119,8 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
             page.listen.start()
             print("📡 Network listener active — capturing API calls...")
         except Exception as listen_err:
-            print(f"⚠️ Network listener failed to start: {listen_err}")
+            print(f"⚠️ Network listener unavailable: {listen_err}")
+            use_listener = False
 
         page.get(url)
 
@@ -130,30 +140,31 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
             time.sleep(5)
 
         # ── COLLECT INTERCEPTED API RESPONSES ──
-        try:
-            # Drain all captured packets (non-blocking, with short timeout)
-            for packet in page.listen.steps(timeout=2):
-                if not packet.response:
-                    continue
-                try:
-                    body = packet.response.body
-                    if body and _is_useful_api_response(packet.url, body):
-                        if total_api_bytes + len(body) > MAX_API_DATA_BYTES:
-                            break  # Cap total data
-                        api_responses.append({
-                            "url": packet.url[:200],  # Truncate long URLs
-                            "data": json.loads(body),
-                        })
-                        total_api_bytes += len(body)
-                except Exception:
-                    pass  # Skip malformed packets
-        except Exception as drain_err:
-            print(f"⚠️ Error draining packets: {drain_err}")
+        if use_listener:
+            try:
+                # Drain all captured packets (non-blocking, with short timeout)
+                for packet in page.listen.steps(timeout=2):
+                    if not packet.response:
+                        continue
+                    try:
+                        body = packet.response.body
+                        if body and _is_useful_api_response(packet.url, body):
+                            if total_api_bytes + len(body) > MAX_API_DATA_BYTES:
+                                break  # Cap total data
+                            api_responses.append({
+                                "url": packet.url[:200],  # Truncate long URLs
+                                "data": json.loads(body),
+                            })
+                            total_api_bytes += len(body)
+                    except Exception:
+                        pass  # Skip malformed packets
+            except Exception as drain_err:
+                print(f"⚠️ Error draining packets: {drain_err}")
 
-        try:
-            page.listen.stop()
-        except Exception:
-            pass
+            try:
+                page.listen.stop()
+            except Exception:
+                pass
 
         if api_responses:
             print(f"📡 Captured {len(api_responses)} API responses ({total_api_bytes:,} bytes)")
