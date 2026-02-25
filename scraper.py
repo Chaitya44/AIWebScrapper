@@ -71,8 +71,8 @@ def get_website_content(url: str, headless: bool = False) -> str:
 
         # Scroll to trigger lazy loading
         print("⬇️ Scrolling to wake up the page...")
-        for _ in range(4):
-            page.scroll.down(400)
+        for _ in range(8):
+            page.scroll.down(500)
             time.sleep(random.uniform(0.5, 1.2))
 
         # If page looks empty, wait longer
