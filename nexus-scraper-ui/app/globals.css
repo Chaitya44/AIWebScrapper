@@ -181,14 +181,18 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   HEADER & NAV — shared styles with light overrides
+   HEADER & NAV — dark mode base styles
    ═══════════════════════════════════════════════════════════════ */
 
 .header-bar {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(10, 10, 15, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.nav-pill-container {
+  backdrop-filter: blur(12px);
 }
 
 .nav-link {
@@ -198,12 +202,12 @@
 
 .nav-link:hover {
   color: #d1d5db;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .nav-link-active {
   color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .theme-toggle-btn {
@@ -215,86 +219,145 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.user-pill {
+  backdrop-filter: blur(12px);
+}
+
+.dropdown-card {
+  backdrop-filter: blur(24px);
+}
+
 /* ═══════════════════════════════════════════════════════════════
-   LIGHT MODE — comprehensive overrides
+   DARK MODE — data/table fluorescent green
+   ═══════════════════════════════════════════════════════════════ */
+.nexus-table td {
+  color: #a3ffc9 !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — comprehensive, soft overrides
    ═══════════════════════════════════════════════════════════════ */
 
 html.light body {
-  background: #f5f7fa;
-  color: #1a1a2e;
+  background: #f8f9fc;
+  color: #1e2a3a;
 }
 
-/* Softer gradient mesh for light */
+/* Soft pastel mesh for light */
 html.light body::before {
   background:
-    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(99, 179, 237, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(129, 140, 248, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(196, 181, 253, 0.03) 0%, transparent 50%);
+  animation: none;
 }
 
 html.light body::after {
-  opacity: 0.01;
+  opacity: 0.008;
 }
 
-/* Header */
+/* ── Header (light) ────────────────────────────────────────── */
 html.light .header-bar {
   border-bottom-color: rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+html.light .nav-pill-container {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 html.light .nav-link {
-  color: #6b7280;
+  color: #64748b;
 }
 
 html.light .nav-link:hover {
-  color: #111827;
+  color: #1e293b;
   background: rgba(0, 0, 0, 0.04);
 }
 
 html.light .nav-link-active {
-  color: #111827;
-  background: rgba(0, 0, 0, 0.06);
+  color: #0f172a;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 html.light .theme-toggle-btn {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 html.light .theme-toggle-btn:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.06);
 }
 
-/* Glass cards */
+html.light .user-pill {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+html.light .user-pill:hover {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light .user-name-text {
+  color: #374151 !important;
+}
+
+html.light .dropdown-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .dropdown-name {
+  color: #111827 !important;
+}
+
+html.light .dropdown-email {
+  color: #6b7280 !important;
+}
+
+html.light .dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── Glass cards (light) ───────────────────────────────────── */
 html.light .glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 20px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(20px);
 }
 
 html.light .glass-card-hover:hover {
-  border-color: rgba(0, 0, 0, 0.12);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
 }
 
 html.light .gradient-border::before {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.12), rgba(139, 92, 246, 0.08));
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(99, 179, 237, 0.1), rgba(129, 140, 248, 0.06));
 }
 
 html.light .glow-emerald {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 20px rgba(16, 185, 129, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(16, 185, 129, 0.06);
 }
 
-/* Orbs — very subtle in light */
+/* ── Orbs — barely visible in light ────────────────────────── */
 html.light .orb {
-  opacity: 0.03;
+  opacity: 0.02;
 }
 
-/* Tables */
+/* ── Tables (light) — teal/slate tones instead of fluorescent ─ */
 html.light .nexus-table th {
   color: #475569 !important;
   background-color: rgba(0, 0, 0, 0.02);
-  border-bottom-color: rgba(0, 0, 0, 0.08);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
 }
 
 html.light .nexus-table td {
@@ -303,37 +366,41 @@ html.light .nexus-table td {
 }
 
 html.light .nexus-table a {
-  color: #0891b2 !important;
+  color: #0d9488 !important;
 }
 
 html.light .nexus-table a:hover {
-  color: #0e7490 !important;
+  color: #0f766e !important;
 }
 
 html.light .nexus-table tbody tr:hover td {
-  background-color: rgba(16, 185, 129, 0.05);
+  background-color: rgba(16, 185, 129, 0.04);
 }
 
-/* Scrollbar */
+/* ── Scrollbar (light) ─────────────────────────────────────── */
 html.light ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
 }
 
 html.light ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.18);
 }
 
-/* ── Light mode: Text color overrides ───────────────────────── */
+/* ── Text colors (light) ───────────────────────────────────── */
+html.light .text-white {
+  color: #111827 !important;
+}
 
-/* Hero heading keeps its emerald gradient — looks good on both themes */
-/* Subtext */
-html.light h1+p,
-html.light .text-gray-500 {
-  color: #6b7280 !important;
+html.light .text-gray-200 {
+  color: #1e293b !important;
 }
 
 html.light .text-gray-400 {
-  color: #9ca3af !important;
+  color: #64748b !important;
+}
+
+html.light .text-gray-500 {
+  color: #6b7280 !important;
 }
 
 html.light .text-gray-600 {
@@ -344,38 +411,7 @@ html.light .text-gray-700 {
   color: #374151 !important;
 }
 
-/* White text → near-black */
-html.light .text-white {
-  color: #111827 !important;
-}
-
-/* Input field */
-html.light input[type="text"] {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  color: #111827 !important;
-}
-
-html.light input[type="text"]::placeholder {
-  color: #9ca3af !important;
-}
-
-html.light input[type="text"]:focus {
-  border-color: rgba(16, 185, 129, 0.3) !important;
-  background: rgba(0, 0, 0, 0.01) !important;
-}
-
-/* Terminal area */
-html.light .bg-\[#08080d\] {
-  background: #f0f1f3 !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
-}
-
-html.light .bg-\[#08080d\] .text-gray-600 {
-  color: #9ca3af !important;
-}
-
-/* Timer glow — visible in both modes */
+/* ── Emerald/Teal (light) — deeper, not neon ───────────────── */
 html.light .text-emerald-400 {
   color: #059669 !important;
 }
@@ -392,11 +428,76 @@ html.light .text-cyan-400\/80 {
   color: #0891b2 !important;
 }
 
-/* Error state */
+/* ── Error state (light) ───────────────────────────────────── */
 html.light .text-red-400 {
   color: #dc2626 !important;
 }
 
 html.light .text-red-400\/60 {
   color: rgba(220, 38, 38, 0.6) !important;
+}
+
+/* ── Inputs (light) ────────────────────────────────────────── */
+html.light input[type="text"],
+html.light input[type="password"] {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #111827 !important;
+}
+
+html.light input[type="text"]::placeholder,
+html.light input[type="password"]::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.light input[type="text"]:focus,
+html.light input[type="password"]:focus {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(0, 0, 0, 0.01) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+/* ── Terminal / dark panels (light) — keep dark terminal ───── */
+html.light .bg-\[#08080d\] {
+  background: #1a1a2e !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ── Buttons (light) ───────────────────────────────────────── */
+html.light .bg-white\/\[0\.03\] {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.08\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .bg-white\/\[0\.02\] {
+  background: rgba(0, 0, 0, 0.015) !important;
+}
+
+/* ── Login page (light) ────────────────────────────────────── */
+html.light .login-btn-google {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+html.light .login-btn-google:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+html.light .login-divider {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .login-stat-card {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+html.light .login-feature-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
 }

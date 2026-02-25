@@ -63,6 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signOut = async () => {
         if (!auth) return;
+        // Clear sensitive data from localStorage
+        localStorage.removeItem("aria_gemini_key");
+        localStorage.removeItem("aria_history");
         await firebaseSignOut(auth);
     };
 
