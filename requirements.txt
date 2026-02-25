@@ -1,4 +1,4 @@
-# Aria Backend � deployment dependencies
+﻿# Aria Backend — deployment dependencies
 fastapi==0.133.0
 uvicorn[standard]==0.34.3
 DrissionPage==4.1.1.2
