@@ -7,6 +7,13 @@ import {
     Database, Table2, Globe, Zap, Clock,
     ArrowRight, Trash2, ExternalLink, Key, Eye, EyeOff, Settings
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+    saveHistory as firestoreSave,
+    loadHistory as firestoreLoad,
+    deleteHistoryEntry as firestoreDelete,
+    clearHistory as firestoreClear,
+} from "@/lib/history";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface FieldSchema { type: string; description: string; }
@@ -114,6 +121,7 @@ const FEATURES = [
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function NexusDashboard() {
+    const { user } = useAuth();
     const [url, setUrl] = useState("");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<ScrapeResponse | null>(null);
@@ -126,17 +134,35 @@ export default function NexusDashboard() {
     const [showSettings, setShowSettings] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Load history + API key on mount
+    // Load history + API key on mount (and when user changes)
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(HISTORY_KEY);
-            if (saved) setHistory(JSON.parse(saved));
-            const savedKey = localStorage.getItem("aria_gemini_key");
-            if (savedKey) setGeminiKey(savedKey);
-        } catch { }
-    }, []);
+        const loadData = async () => {
+            try {
+                const savedKey = localStorage.getItem("aria_gemini_key");
+                if (savedKey) setGeminiKey(savedKey);
 
-    const saveHistory = (entries: HistoryEntry[]) => {
+                if (user) {
+                    // Logged in → load from Firestore
+                    const entries = await firestoreLoad(user.uid);
+                    setHistory(entries.map(e => ({
+                        id: e.id || Date.now().toString(),
+                        url: e.url,
+                        timestamp: e.timestamp,
+                        entityCount: Object.keys(e.data || {}).length,
+                        totalItems: e.itemCount,
+                        result: { status: "success", data: e.data, schema: e.schema, entityCount: Object.keys(e.data || {}).length, totalItems: e.itemCount, timestamp: e.timestamp, url: e.url },
+                    })));
+                } else {
+                    // Not logged in → load from localStorage
+                    const saved = localStorage.getItem(HISTORY_KEY);
+                    if (saved) setHistory(JSON.parse(saved));
+                }
+            } catch { }
+        };
+        loadData();
+    }, [user]);
+
+    const saveLocalHistory = (entries: HistoryEntry[]) => {
         setHistory(entries);
         localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
     };
@@ -201,7 +227,7 @@ export default function NexusDashboard() {
             setLoading(false);
             setResult(json);
 
-            // Save to history (FIFO: max 5)
+            // Save to history
             const entry: HistoryEntry = {
                 id: Date.now().toString(),
                 url: url.trim(),
@@ -210,8 +236,31 @@ export default function NexusDashboard() {
                 totalItems: json.totalItems,
                 result: json,
             };
-            const updated = [...history, entry].slice(-MAX_HISTORY);
-            saveHistory(updated);
+
+            if (user) {
+                // Save to Firestore
+                await firestoreSave(user.uid, {
+                    url: entry.url,
+                    timestamp: entry.timestamp,
+                    data: json.data,
+                    schema: json.schema,
+                    itemCount: json.totalItems,
+                });
+                // Reload from Firestore to get correct state
+                const entries = await firestoreLoad(user.uid);
+                setHistory(entries.map(e => ({
+                    id: e.id || Date.now().toString(),
+                    url: e.url,
+                    timestamp: e.timestamp,
+                    entityCount: Object.keys(e.data || {}).length,
+                    totalItems: e.itemCount,
+                    result: { status: "success", data: e.data, schema: e.schema, entityCount: Object.keys(e.data || {}).length, totalItems: e.itemCount, timestamp: e.timestamp, url: e.url },
+                })));
+            } else {
+                // Save to localStorage
+                const updated = [...history, entry].slice(-MAX_HISTORY);
+                saveLocalHistory(updated);
+            }
 
             if (json.totalItems === 0) {
                 addLog("Page returned minimal data.");
@@ -233,12 +282,32 @@ export default function NexusDashboard() {
         setLogs([`Loaded from history: ${entry.url}`]);
     };
 
-    const deleteHistory = (id: string) => {
-        const updated = history.filter((h) => h.id !== id);
-        saveHistory(updated);
+    const deleteHistory = async (id: string) => {
+        if (user) {
+            await firestoreDelete(user.uid, id);
+            const entries = await firestoreLoad(user.uid);
+            setHistory(entries.map(e => ({
+                id: e.id || Date.now().toString(),
+                url: e.url,
+                timestamp: e.timestamp,
+                entityCount: Object.keys(e.data || {}).length,
+                totalItems: e.itemCount,
+                result: { status: "success", data: e.data, schema: e.schema, entityCount: Object.keys(e.data || {}).length, totalItems: e.itemCount, timestamp: e.timestamp, url: e.url },
+            })));
+        } else {
+            const updated = history.filter((h) => h.id !== id);
+            saveLocalHistory(updated);
+        }
     };
 
-    const clearHistory = () => saveHistory([]);
+    const handleClearHistory = async () => {
+        if (user) {
+            await firestoreClear(user.uid);
+            setHistory([]);
+        } else {
+            saveLocalHistory([]);
+        }
+    };
 
     const exportJSON = () => {
         if (!result) return;
@@ -560,7 +629,7 @@ export default function NexusDashboard() {
                                 <h2 className="text-sm font-bold text-white tracking-wide">Recent Extractions</h2>
                                 <span className="text-[10px] bg-white/[0.06] px-2 py-0.5 rounded-full text-gray-500 font-medium">{history.length}/{MAX_HISTORY}</span>
                             </div>
-                            <button onClick={clearHistory} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors">
+                            <button onClick={handleClearHistory} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors">
                                 Clear all
                             </button>
                         </div>

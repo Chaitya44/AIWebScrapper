@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Shield, Zap, Globe, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
 
 const TRUST_POINTS = [
     { icon: Shield, text: "Your data stays in your browser — nothing stored on our servers" },
@@ -13,10 +15,29 @@ const TRUST_POINTS = [
 
 export default function LoginPage() {
     const router = useRouter();
+    const { user, signInWithGoogle, signInWithGitHub } = useAuth();
 
-    const handleLogin = (provider: string) => {
-        console.log(`[Auth] Login with ${provider}`);
-        router.push("/");
+    // Redirect if already logged in
+    useEffect(() => {
+        if (user) router.push("/");
+    }, [user, router]);
+
+    const handleGoogle = async () => {
+        try {
+            await signInWithGoogle();
+            router.push("/");
+        } catch (e: any) {
+            console.error("[Auth] Google sign-in failed:", e.message);
+        }
+    };
+
+    const handleGitHub = async () => {
+        try {
+            await signInWithGitHub();
+            router.push("/");
+        } catch (e: any) {
+            console.error("[Auth] GitHub sign-in failed:", e.message);
+        }
     };
 
     return (
@@ -102,7 +123,7 @@ export default function LoginPage() {
                         <div className="space-y-3">
                             {/* Google */}
                             <button
-                                onClick={() => handleLogin("google")}
+                                onClick={handleGoogle}
                                 className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-gray-50 text-gray-800 font-medium py-4 px-5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24">
@@ -116,7 +137,7 @@ export default function LoginPage() {
 
                             {/* GitHub */}
                             <button
-                                onClick={() => handleLogin("github")}
+                                onClick={handleGitHub}
                                 className="w-full flex items-center justify-center space-x-3 bg-[#161b22] hover:bg-[#1f2937] text-white font-medium py-4 px-5 rounded-xl transition-all duration-200 border border-white/[0.08] hover:border-white/[0.15] group"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -140,8 +161,8 @@ export default function LoginPage() {
                                 <div>
                                     <p className="text-emerald-400 text-xs font-semibold mb-1">Privacy-first architecture</p>
                                     <p className="text-gray-500 text-[11px] leading-relaxed">
-                                        All data processing happens locally. Your extraction history is stored only in your browser.
-                                        We never log, sell, or share your data.
+                                        All data processing happens locally. Your extraction history syncs
+                                        securely to your account via Firebase.
                                     </p>
                                 </div>
                             </div>

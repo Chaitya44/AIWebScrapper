@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sun, Moon, User, Sparkles } from "lucide-react";
+import { Sun, Moon, User, Sparkles, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
     const pathname = usePathname();
+    const { user, signOut } = useAuth();
     const [theme, setTheme] = useState<"dark" | "light">("dark");
+    const [showMenu, setShowMenu] = useState(false);
 
     useEffect(() => {
         const saved = localStorage.getItem("aria_theme") as "dark" | "light" | null;
@@ -70,12 +73,53 @@ export default function Header() {
                         {isDark ? <Sun size={15} className="text-gray-400" /> : <Moon size={15} className="text-gray-600" />}
                     </button>
 
-                    <Link
-                        href="/login"
-                        className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center transition-all duration-200 hover:from-emerald-500/30 hover:to-teal-500/30"
-                    >
-                        <User size={15} className="text-emerald-400" />
-                    </Link>
+                    {user ? (
+                        /* Logged in — show avatar with dropdown */
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowMenu(!showMenu)}
+                                className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-200"
+                            >
+                                {user.photoURL ? (
+                                    <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
+                                        <span className="text-emerald-400 text-xs font-bold">
+                                            {user.displayName?.charAt(0) || user.email?.charAt(0) || "?"}
+                                        </span>
+                                    </div>
+                                )}
+                            </button>
+
+                            {showMenu && (
+                                <div className="absolute right-0 top-12 w-56 glass-card rounded-xl border border-white/[0.06] p-3 space-y-2 shadow-xl z-50">
+                                    <div className="px-2 py-1">
+                                        <p className="text-white text-sm font-medium truncate">{user.displayName || "User"}</p>
+                                        <p className="text-gray-500 text-xs truncate">{user.email}</p>
+                                    </div>
+                                    <div className="h-px bg-white/[0.06]" />
+                                    <button
+                                        onClick={async () => {
+                                            setShowMenu(false);
+                                            await signOut();
+                                        }}
+                                        className="w-full flex items-center space-x-2 px-2 py-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-sm"
+                                    >
+                                        <LogOut size={14} />
+                                        <span>Sign out</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* Not logged in — show login button */
+                        <Link
+                            href="/login"
+                            className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center transition-all duration-200 hover:from-emerald-500/30 hover:to-teal-500/30"
+                        >
+                            <User size={15} className="text-emerald-400" />
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>
