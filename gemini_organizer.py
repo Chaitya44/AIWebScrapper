@@ -100,6 +100,8 @@ RULES:
 - Category names should be PascalCase (e.g. "Products", "SongList", "TeamMembers").
 - You MUST extract data. An empty result is a failure. Even if the page seems sparse, extract whatever text/links/info exists.
 - Prefer more categories with fewer items over one giant category.
+- If an "INTERCEPTED API DATA" section is present below the HTML, use it as the PRIMARY data source — it contains JSON from XHR/Fetch calls that the page loaded dynamically and is often more complete than the HTML.
+- Merge data from both HTML and API data sections. Avoid duplicates.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SOURCE URL: {source_url}

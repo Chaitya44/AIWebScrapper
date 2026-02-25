@@ -366,18 +366,26 @@ export default function NexusDashboard() {
             <div className="relative z-10 flex min-h-[calc(100vh-4rem)]">
 
                 {/* ── HISTORY SIDEBAR (left) ──────────────────────── */}
-                {history.length > 0 && (
-                    <aside className="hidden lg:block w-72 flex-shrink-0 border-r border-white/[0.04] history-sidebar p-4 overflow-y-auto">
-                        <div className="flex items-center justify-between mb-4 px-1">
-                            <div className="flex items-center space-x-2">
-                                <Clock size={14} className="text-gray-500" />
-                                <h2 className="text-xs font-bold text-white tracking-wide">History</h2>
-                                <span className="text-[9px] bg-white/[0.06] px-1.5 py-0.5 rounded-full text-gray-500 font-medium">{history.length}/{MAX_HISTORY}</span>
-                            </div>
-                            <button onClick={handleClearHistory} className="text-[10px] text-gray-600 hover:text-red-400 transition-colors">Clear</button>
+                <aside className="hidden lg:block w-72 flex-shrink-0 border-r border-white/[0.04] history-sidebar p-4 overflow-y-auto">
+                    <div className="flex items-center justify-between mb-4 px-1">
+                        <div className="flex items-center space-x-2">
+                            <Clock size={14} className="text-gray-500" />
+                            <h2 className="text-xs font-bold text-white tracking-wide">History</h2>
+                            <span className="text-[9px] bg-white/[0.06] px-1.5 py-0.5 rounded-full text-gray-500 font-medium">{history.length}/{MAX_HISTORY}</span>
                         </div>
+                        {history.length > 0 && (
+                            <button onClick={handleClearHistory} className="text-[10px] text-gray-600 hover:text-red-400 transition-colors">Clear</button>
+                        )}
+                    </div>
+                    {history.length === 0 ? (
+                        <div className="text-center py-8">
+                            <Clock size={24} className="text-gray-700 mx-auto mb-3" />
+                            <p className="text-gray-600 text-[11px] font-medium">No extractions yet</p>
+                            <p className="text-gray-700 text-[10px] mt-1">Your last 5 scrapes will appear here</p>
+                        </div>
+                    ) : (
                         <div className="space-y-2">
-                            {[...history].reverse().map((entry) => (
+                            {history.map((entry) => (
                                 <motion.div
                                     key={entry.id}
                                     layout
@@ -407,8 +415,8 @@ export default function NexusDashboard() {
                                 </motion.div>
                             ))}
                         </div>
-                    </aside>
-                )}
+                    )}
+                </aside>
 
                 {/* ── MAIN CONTENT ────────────────────────────────── */}
                 <div className="flex-1 max-w-5xl mx-auto px-6 py-10">

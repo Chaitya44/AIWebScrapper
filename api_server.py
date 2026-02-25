@@ -64,24 +64,34 @@ async def scrape_url(request: ScrapeRequest):
 
         # ── Phase 1: Scrape the page ─────────────────────────────────────
         print("[API] Phase 1: Scraping...")
-        html = await loop.run_in_executor(
+        scrape_result = await loop.run_in_executor(
             None,
             scraper.get_website_content,
             request.url,
             request.config.headlessMode
         )
 
+        # Unpack (html, api_data) tuple
+        html, api_data = scrape_result if isinstance(scrape_result, tuple) else (scrape_result, "")
+
         if not html:
             raise HTTPException(status_code=500, detail="Failed to fetch website content. The page may be blocking scrapers or the URL may be invalid.")
 
         print(f"[API] HTML retrieved: {len(html):,} chars")
+        if api_data:
+            print(f"[API] API data captured: {len(api_data):,} chars")
+
+        # Combine HTML + API data for richer extraction
+        combined = html
+        if api_data:
+            combined = html + "\n\n===== INTERCEPTED API DATA (JSON from XHR/Fetch calls) =====\n" + api_data
 
         # ── Phase 2: AI Extraction via GeminiOrganizer ───────────────────
         print("[API] Phase 2: Gemini AI extraction (schema-aware)...")
         # BYOK: pass user key (never logged)
         result = await loop.run_in_executor(
             None,
-            lambda: ai_agent.extract_structured(html, api_key=request.geminiKey, source_url=request.url)
+            lambda: ai_agent.extract_structured(combined, api_key=request.geminiKey, source_url=request.url)
         )
 
         api_payload = result.to_api_response()

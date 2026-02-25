@@ -1,12 +1,14 @@
 """
-scraper.py — Clean DrissionPage Scraper
+scraper.py — Universal DrissionPage Scraper with Network Interception
 Based on the original AI-WebScraper project by Chaitya44.
 
 Flow:
-  1. Launch Chromium with anti-detection tricks (randomized viewport, no webdriver flag)
-  2. Scroll to trigger lazy loading
-  3. Clean HTML with BeautifulSoup
-  4. Return clean HTML → GeminiOrganizer handles the rest
+  1. Launch Chromium with anti-detection (randomized viewport, no webdriver flag)
+  2. Start network listener to capture API/XHR/Fetch responses
+  3. Navigate to URL and scroll to trigger lazy loading
+  4. Collect both rendered HTML and intercepted API JSON data
+  5. Clean HTML with BeautifulSoup
+  6. Return clean HTML + API data → GeminiOrganizer handles the rest
 """
 
 from DrissionPage import ChromiumPage, ChromiumOptions
@@ -16,13 +18,49 @@ import shutil
 import random
 import time
 import os
+import json
 import traceback
 
 
-def get_website_content(url: str, headless: bool = False) -> str:
+# Max bytes of API data to collect (avoid token overload)
+MAX_API_DATA_BYTES = 50_000
+
+# Content types that indicate useful API JSON data
+JSON_CONTENT_TYPES = {"application/json", "text/json"}
+
+# URL patterns to SKIP (tracking, analytics, ads — not useful data)
+SKIP_PATTERNS = [
+    "google-analytics", "googletagmanager", "facebook.com/tr",
+    "doubleclick", "analytics", "tracking", "sentry", "hotjar",
+    "amplitude", "segment", "mixpanel", "clarity.ms", ".png",
+    ".jpg", ".jpeg", ".gif", ".svg", ".woff", ".woff2", ".css",
+    ".js", "favicon", "beacon", "log", "telemetry",
+]
+
+
+def _is_useful_api_response(url: str, body: str) -> bool:
+    """Filter out tracking/analytics/asset requests, keep real API data."""
+    url_lower = url.lower()
+    if any(skip in url_lower for skip in SKIP_PATTERNS):
+        return False
+    # Must be JSON-parseable and non-trivial
+    if not body or len(body) < 20:
+        return False
+    try:
+        data = json.loads(body)
+        # Skip if it's just a status or tiny object
+        if isinstance(data, dict) and len(data) <= 2:
+            return False
+        return True
+    except (json.JSONDecodeError, ValueError):
+        return False
+
+
+def get_website_content(url: str, headless: bool = False) -> tuple[str | None, str]:
     """
-    Fetch a URL and return cleaned HTML text.
-    Returns None on total failure.
+    Fetch a URL and return (cleaned_html, api_data_json_string).
+    The api_data is a JSON string of intercepted API responses.
+    Returns (None, "") on total failure.
     """
     print(f"\n🕵️ Stealth Scraping: {url}")
 
@@ -57,11 +95,22 @@ def get_website_content(url: str, headless: bool = False) -> str:
         co.set_browser_path(chromium_path)
 
     page = None
+    api_responses = []
+    total_api_bytes = 0
+
     try:
         page = ChromiumPage(addr_or_opts=co)
 
         # Anti-detection: remove the webdriver flag
         page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+        # ── START NETWORK LISTENER before navigating ──
+        # This captures XHR/Fetch API responses that SPAs load dynamically
+        try:
+            page.listen.start()
+            print("📡 Network listener active — capturing API calls...")
+        except Exception as listen_err:
+            print(f"⚠️ Network listener failed to start: {listen_err}")
 
         page.get(url)
 
@@ -80,6 +129,37 @@ def get_website_content(url: str, headless: bool = False) -> str:
             print("⚠️ Page looks empty. Waiting longer...")
             time.sleep(5)
 
+        # ── COLLECT INTERCEPTED API RESPONSES ──
+        try:
+            # Drain all captured packets (non-blocking, with short timeout)
+            for packet in page.listen.steps(timeout=2):
+                if not packet.response:
+                    continue
+                try:
+                    body = packet.response.body
+                    if body and _is_useful_api_response(packet.url, body):
+                        if total_api_bytes + len(body) > MAX_API_DATA_BYTES:
+                            break  # Cap total data
+                        api_responses.append({
+                            "url": packet.url[:200],  # Truncate long URLs
+                            "data": json.loads(body),
+                        })
+                        total_api_bytes += len(body)
+                except Exception:
+                    pass  # Skip malformed packets
+        except Exception as drain_err:
+            print(f"⚠️ Error draining packets: {drain_err}")
+
+        try:
+            page.listen.stop()
+        except Exception:
+            pass
+
+        if api_responses:
+            print(f"📡 Captured {len(api_responses)} API responses ({total_api_bytes:,} bytes)")
+        else:
+            print("📡 No API responses intercepted (static page)")
+
         # Grab the HTML
         raw_html = page.html
 
@@ -94,13 +174,18 @@ def get_website_content(url: str, headless: bool = False) -> str:
         clean_html = str(soup.body or soup)
         clean_html = " ".join(clean_html.split())
 
-        print(f"✅ Captured {len(clean_html):,} chars")
-        return clean_html[:300000]
+        # Build API data string
+        api_data_str = ""
+        if api_responses:
+            api_data_str = json.dumps(api_responses, ensure_ascii=False, default=str)[:MAX_API_DATA_BYTES]
+
+        print(f"✅ Captured {len(clean_html):,} chars HTML + {len(api_data_str):,} chars API data")
+        return clean_html[:300000], api_data_str
 
     except Exception as e:
         print(f"❌ Scraper Error: {e}")
         traceback.print_exc()
-        return None
+        return None, ""
 
     finally:
         if page:
