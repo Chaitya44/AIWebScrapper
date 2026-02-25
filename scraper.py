@@ -40,7 +40,6 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.chrome.service import Service
-    from selenium.common.exceptions import TimeoutException, WebDriverException
 
     print("[Scraper] Server mode — using Selenium + ChromeDriver")
 
@@ -49,29 +48,17 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
 
     try:
         opts = Options()
-        # Headless + critical Docker flags
-        opts.add_argument("--headless=new")
+        opts.add_argument("--headless")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
-
-        # Memory optimization for Render free tier (512MB)
         opts.add_argument("--disable-gpu")
-        opts.add_argument("--disable-software-rasterizer")
         opts.add_argument("--disable-extensions")
         opts.add_argument("--disable-background-networking")
         opts.add_argument("--disable-default-apps")
         opts.add_argument("--disable-sync")
-        opts.add_argument("--disable-translate")
-        opts.add_argument("--disable-backgrounding-occluded-windows")
-        opts.add_argument("--disable-renderer-backgrounding")
-        opts.add_argument("--disable-background-timer-throttling")
-        opts.add_argument("--js-flags=--max-old-space-size=256")
-        opts.add_argument("--disable-features=VizDisplayCompositor,TranslateUI")
-        opts.add_argument("--blink-settings=imagesEnabled=false")  # Skip images = huge memory save
-
-        opts.add_argument(f"--user-data-dir={temp_user_data}")
         opts.add_argument("--window-size=1280,720")
         opts.add_argument("--disable-blink-features=AutomationControlled")
+        opts.add_argument(f"--user-data-dir={temp_user_data}")
 
         # Set Chromium binary
         chromium_path = os.environ.get("CHROMIUM_PATH")
@@ -81,18 +68,24 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
         # Use chromedriver from system
         service = Service("/usr/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=opts)
+        driver.set_page_load_timeout(45)
 
         # Anti-detection
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-        # Navigate with timeout protection
-        driver.set_page_load_timeout(25)
-        try:
-            driver.get(url)
-        except TimeoutException:
-            print("⚠️ Page load timed out — using partial content")
+        # Navigate to URL
+        print(f"🌐 Loading {url}...")
+        driver.get(url)
 
-        # Brief wait for JS to execute
+        # Verify we're on the right page (not stuck on about:blank)
+        current = driver.current_url
+        if current in ("about:blank", "data:,", "chrome://newtab/"):
+            print(f"⚠️ Navigation failed — still on {current}")
+            return None, ""
+
+        print(f"✅ Page loaded: {current}")
+
+        # Wait for JS to render
         time.sleep(2)
 
         # Quick SPA check
