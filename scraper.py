@@ -46,6 +46,9 @@ def get_website_content(url: str, headless: bool = False) -> str:
     co.set_argument('--disable-blink-features=AutomationControlled')
     co.set_argument('--no-sandbox')
     co.set_argument('--disable-dev-shm-usage')
+    co.set_argument('--disable-gpu')
+    co.set_argument('--disable-software-rasterizer')
+    co.set_argument('--single-process')
     co.auto_port()
 
     # Set Chromium binary path from environment (for Docker/Render)

@@ -7,15 +7,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     libnss3 \
     libxss1 \
-    libasound2 \
+    libasound2t64 \
     libatk-bridge2.0-0 \
     libgtk-3-0 \
     libdrm2 \
     libgbm1 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    ca-certificates \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Chromium path for DrissionPage
 ENV CHROMIUM_PATH=/usr/bin/chromium
+ENV RENDER=true
 
 WORKDIR /app
 
@@ -23,12 +30,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy all Python source files
-COPY api_server.py .
-COPY scraper.py .
-COPY gemini_organizer.py .
-COPY ai_agent.py .
-COPY captcha_handler.py .
-COPY auth.py .
+COPY *.py .
 
 EXPOSE 8000
 

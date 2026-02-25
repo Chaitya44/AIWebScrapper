@@ -2,7 +2,7 @@ services:
   - type: web
     name: aria-backend
     runtime: docker
-    plan: free
+    plan: starter
     envVars:
       - key: GEMINI_API_KEY
         sync: false
@@ -10,3 +10,5 @@ services:
         value: "true"
       - key: CHROMIUM_PATH
         value: /usr/bin/chromium
+      - key: PORT
+        value: "8000"
