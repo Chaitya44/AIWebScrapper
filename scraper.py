@@ -40,6 +40,7 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.chrome.service import Service
+    from selenium.common.exceptions import TimeoutException, WebDriverException
 
     print("[Scraper] Server mode — using Selenium + ChromeDriver")
 
@@ -48,14 +49,28 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
 
     try:
         opts = Options()
-        opts.add_argument("--headless")
+        # Headless + critical Docker flags
+        opts.add_argument("--headless=new")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
+
+        # Memory optimization for Render free tier (512MB)
         opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-software-rasterizer")
-        opts.add_argument("--disable-features=VizDisplayCompositor")
+        opts.add_argument("--disable-extensions")
+        opts.add_argument("--disable-background-networking")
+        opts.add_argument("--disable-default-apps")
+        opts.add_argument("--disable-sync")
+        opts.add_argument("--disable-translate")
+        opts.add_argument("--disable-backgrounding-occluded-windows")
+        opts.add_argument("--disable-renderer-backgrounding")
+        opts.add_argument("--disable-background-timer-throttling")
+        opts.add_argument("--js-flags=--max-old-space-size=256")
+        opts.add_argument("--disable-features=VizDisplayCompositor,TranslateUI")
+        opts.add_argument("--blink-settings=imagesEnabled=false")  # Skip images = huge memory save
+
         opts.add_argument(f"--user-data-dir={temp_user_data}")
-        opts.add_argument(f"--window-size={random.randint(1024,1920)},{random.randint(768,1080)}")
+        opts.add_argument("--window-size=1280,720")
         opts.add_argument("--disable-blink-features=AutomationControlled")
 
         # Set Chromium binary
@@ -70,19 +85,23 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
         # Anti-detection
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-        driver.set_page_load_timeout(30)
-        driver.get(url)
+        # Navigate with timeout protection
+        driver.set_page_load_timeout(25)
+        try:
+            driver.get(url)
+        except TimeoutException:
+            print("⚠️ Page load timed out — using partial content")
 
-        # Wait for page
+        # Brief wait for JS to execute
         time.sleep(2)
 
-        # Quick SPA check — thin HTML means data is loaded via JS APIs
+        # Quick SPA check
         initial_len = len(driver.page_source)
         is_spa = initial_len < 10000
 
         if is_spa:
             print(f"⚡ SPA detected ({initial_len:,} chars) — extra scrolling...")
-            scroll_count = 6
+            scroll_count = 5
         else:
             print(f"📄 Rich HTML ({initial_len:,} chars) — light scrolling...")
             scroll_count = 3
@@ -90,7 +109,7 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
         # Scroll to trigger lazy loading
         for _ in range(scroll_count):
             driver.execute_script("window.scrollBy(0, 500)")
-            time.sleep(random.uniform(0.4, 0.8))
+            time.sleep(0.5)
 
         # Grab final HTML
         raw_html = driver.page_source
