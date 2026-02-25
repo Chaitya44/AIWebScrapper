@@ -85,6 +85,30 @@
     mask-composite: exclude;
     pointer-events: none;
   }
+
+  /* Apple Liquid Glass — visionOS-inspired frosted panel */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 32px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .liquid-glass:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      0 12px 48px rgba(0, 0, 0, 0.25),
+      0 4px 12px rgba(0, 0, 0, 0.12);
+  }
 }
 
 /* ── DATA TABLES ─────────────────────────────────────────────── */
@@ -488,6 +512,15 @@ html.light .login-btn-google:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+html.light .login-btn-github {
+  background: #1a1a2e !important;
+  color: #fff !important;
+}
+
+html.light .login-btn-github span {
+  color: #fff !important;
+}
+
 html.light .login-divider {
   background: rgba(0, 0, 0, 0.08) !important;
 }
@@ -500,4 +533,89 @@ html.light .login-stat-card {
 html.light .login-feature-card {
   background: rgba(255, 255, 255, 0.7) !important;
   border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── Liquid glass (light) ──────────────────────────────────── */
+html.light .liquid-glass {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+html.light .liquid-glass:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.25),
+    0 12px 48px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Light mode: indigo accent swap ────────────────────────── */
+html.light .text-emerald-400,
+html.light .accent-text {
+  color: #6366f1 !important;
+}
+
+html.light .text-emerald-500,
+html.light .accent-text-strong {
+  color: #4f46e5 !important;
+}
+
+html.light .border-emerald-500\/15,
+html.light .border-emerald-500\/10,
+html.light .border-emerald-500\/20 {
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+html.light .bg-emerald-500\/10,
+html.light .bg-emerald-500\/5 {
+  background: rgba(99, 102, 241, 0.08) !important;
+}
+
+/* ── History sidebar (light) ───────────────────────────────── */
+html.light .history-sidebar {
+  border-right-color: rgba(0, 0, 0, 0.06) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ── API Key button enhancement ────────────────────────────── */
+.api-key-btn {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.api-key-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+html.light .api-key-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Feature card icon glow ────────────────────────────────── */
+.feature-icon-glow {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15), 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+html.light .feature-icon-glow {
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.12), 0 0 4px rgba(99, 102, 241, 0.08);
+}
+
+/* ── Privacy acceptance bar ────────────────────────────────── */
+.privacy-bar {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+html.light .privacy-bar {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.04);
 }

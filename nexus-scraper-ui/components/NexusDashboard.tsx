@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search, Download, AlertTriangle, Loader2,
-    Database, Table2, Globe, Zap, Clock,
+    Database, Table2, Globe, Zap, Clock, Shield,
     ArrowRight, Trash2, ExternalLink, Key, Eye, EyeOff, Settings
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -353,292 +353,18 @@ export default function NexusDashboard() {
             <div className="orb" style={{ width: 350, height: 350, bottom: -50, right: -50, background: "rgba(6, 182, 212, 0.4)", animationDelay: "-5s" }} />
             <div className="orb" style={{ width: 250, height: 250, top: "40%", right: "20%", background: "rgba(139, 92, 246, 0.3)", animationDelay: "-10s" }} />
 
-            <div className="relative z-10 max-w-6xl mx-auto px-6 py-10">
+            <div className="relative z-10 flex min-h-[calc(100vh-4rem)]">
 
-                {/* ── HERO ──────────────────────────────────────────── */}
-                <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-                    <h1 className="text-7xl md:text-8xl font-extrabold tracking-tight leading-none mb-4">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-br from-emerald-300 via-teal-200 to-cyan-300">
-                            Aria
-                        </span>
-                    </h1>
-                    <p className="text-gray-500 text-lg max-w-lg mx-auto leading-relaxed font-light">
-                        Paste any URL. Aria reads the page, understands it,
-                        and returns perfectly structured data.
-                    </p>
-                </motion.div>
-
-                {/* ── FEATURE CARDS (2×2) ──────────────────────────── */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10"
-                >
-                    {FEATURES.map((f, i) => (
-                        <motion.div
-                            key={f.title}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15 + i * 0.06 }}
-                            className="glass-card glass-card-hover rounded-2xl p-5 flex flex-col items-center text-center cursor-default group"
-                        >
-                            <div className="mb-3 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-                                <f.Illustration />
-                            </div>
-                            <h3 className="text-white text-sm font-bold mb-1.5">{f.title}</h3>
-                            <p className="text-gray-500 text-xs leading-relaxed">{f.desc}</p>
-                        </motion.div>
-                    ))}
-                </motion.div>
-
-                {/* ── MAIN INPUT CARD ──────────────────────────────── */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="glass-card gradient-border rounded-2xl overflow-hidden glow-emerald"
-                >
-                    <div className="p-6 md:p-8 space-y-5">
-                        {/* API Key Settings */}
-                        <div>
-                            <button
-                                onClick={() => setShowSettings(!showSettings)}
-                                className="flex items-center space-x-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-3"
-                            >
-                                <Settings size={13} className={showSettings ? "text-emerald-400" : ""} />
-                                <span>API Key</span>
-                                {geminiKey ? (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-1" />
-                                ) : (
-                                    <span className="text-red-400 text-[10px] ml-1">required</span>
-                                )}
-                            </button>
-                            <AnimatePresence>
-                                {showSettings && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-4 space-y-3">
-                                            <div className="flex items-center space-x-2">
-                                                <Key size={14} className="text-emerald-500 flex-shrink-0" />
-                                                <p className="text-gray-400 text-xs">
-                                                    Enter your Gemini API key.{" "}
-                                                    <a
-                                                        href="https://aistudio.google.com/apikey"
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-emerald-500/70 hover:text-emerald-400 underline transition-colors"
-                                                    >
-                                                        Get a free key →
-                                                    </a>
-                                                </p>
-                                            </div>
-                                            <div className="relative">
-                                                <input
-                                                    type={showKey ? "text" : "password"}
-                                                    value={geminiKey}
-                                                    onChange={(e) => {
-                                                        setGeminiKey(e.target.value);
-                                                        localStorage.setItem("aria_gemini_key", e.target.value);
-                                                    }}
-                                                    placeholder="AIza..."
-                                                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg py-2.5 pl-3 pr-10 text-white font-mono text-xs focus:outline-none focus:border-emerald-500/30 transition-all placeholder:text-gray-700"
-                                                />
-                                                <button
-                                                    onClick={() => setShowKey(!showKey)}
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors"
-                                                >
-                                                    {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                                                </button>
-                                            </div>
-                                            <p className="text-gray-600 text-[10px]">
-                                                🔒 Stored locally in your browser. Never sent to third parties.
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* URL Input */}
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-600 group-focus-within:text-emerald-400 transition-colors duration-300" />
-                            </div>
-                            <input
-                                type="text"
-                                value={url}
-                                onChange={(e) => setUrl(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && !loading && handleScrape()}
-                                placeholder="https://example.com"
-                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl py-4 pl-12 pr-44 text-white font-mono text-sm focus:outline-none focus:border-emerald-500/30 focus:bg-white/[0.05] transition-all duration-300 placeholder:text-gray-700"
-                            />
-                            <button
-                                onClick={handleScrape}
-                                disabled={loading || !url.trim()}
-                                className="absolute right-2 top-2 bottom-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:from-gray-700 disabled:to-gray-700 disabled:opacity-40 text-white px-6 rounded-lg font-semibold text-sm tracking-wide transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-emerald-950/30"
-                            >
-                                {loading ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} />}
-                                <span>{loading ? "Extracting" : "Extract"}</span>
-                            </button>
-                        </div>
-
-                        {/* Terminal */}
-                        <div className="relative bg-[#08080d] rounded-xl border border-white/[0.04] overflow-hidden">
-                            <div className="h-8 border-b border-white/[0.04] flex items-center px-3 space-x-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-                                <span className="ml-3 text-[10px] text-gray-600 font-mono">aria_agent</span>
-                            </div>
-                            <div className="p-4 h-28 font-mono text-xs text-gray-500 overflow-hidden">
-                                {logs.map((log, i) => (
-                                    <motion.div key={`${i}-${log}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="mb-1 flex items-start">
-                                        <span className="text-emerald-600 mr-2 flex-shrink-0">$</span>
-                                        <span className="text-gray-400">{log}</span>
-                                    </motion.div>
-                                ))}
-                            </div>
-                            {loading && (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute bottom-3 right-4 flex items-baseline space-x-1">
-                                    <span className="text-3xl font-bold tabular-nums text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]">
-                                        {elapsed.toFixed(1)}
-                                    </span>
-                                    <span className="text-emerald-600 text-xs font-medium">sec</span>
-                                </motion.div>
-                            )}
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* ── ERROR ────────────────────────────────────────── */}
-                <AnimatePresence>
-                    {error && (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                            className="mt-6 p-4 bg-red-500/5 border border-red-500/15 rounded-xl flex items-start space-x-3">
-                            <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={18} />
-                            <div>
-                                <p className="text-red-400 font-semibold text-sm">Extraction Failed</p>
-                                <p className="text-red-400/60 text-xs mt-1">{error}</p>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* ── LOADING ──────────────────────────────────────── */}
-                {loading && (
-                    <div className="mt-8 space-y-4">
-                        <div className="flex items-center justify-center space-x-2 text-gray-500 text-sm">
-                            <Zap size={14} className="text-emerald-500 animate-pulse" />
-                            <span>Aria is reading and organizing data...</span>
-                        </div>
-                        {[1, 2].map((i) => (
-                            <div key={i} className="glass-card rounded-xl p-6 space-y-3 animate-pulse">
-                                <div className="h-3 bg-white/[0.04] rounded w-1/4" />
-                                <div className="h-2.5 bg-white/[0.03] rounded w-full" />
-                                <div className="h-2.5 bg-white/[0.03] rounded w-4/5" />
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* ── RESULTS ──────────────────────────────────────── */}
-                <div className="mt-8 space-y-6">
-                    <AnimatePresence>
-                        {result && (
-                            <>
-                                {/* Summary */}
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                    className="glass-card rounded-xl px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                                            <Database size={16} className="text-white" />
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-semibold text-sm">Extraction Complete</p>
-                                            <p className="text-gray-500 text-xs">{result.entityCount} categories · {result.totalItems} items · {elapsed.toFixed(1)}s</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={exportJSON}
-                                        className="flex items-center space-x-2 text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-gray-300 hover:text-white px-4 py-2 rounded-lg transition-all font-medium">
-                                        <Download size={13} /><span>Export JSON</span>
-                                    </button>
-                                </motion.div>
-
-                                {/* Category Tables */}
-                                {Object.entries(result.data).map(([category, items], idx) => {
-                                    const schemaFields = result.schema[category]?.fields;
-                                    const columns: string[] = schemaFields
-                                        ? Object.keys(schemaFields)
-                                        : (Array.isArray(items) && items.length > 0 && typeof items[0] === "object" ? Object.keys(items[0]) : []);
-
-                                    return (
-                                        <motion.div key={category} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div className="flex items-center space-x-2.5">
-                                                    <Table2 className="text-emerald-500" size={15} />
-                                                    <h2 className="text-sm font-bold text-white tracking-wide">{category.replace(/([A-Z])/g, " $1").trim()}</h2>
-                                                    <span className="text-[10px] bg-white/[0.06] px-2 py-0.5 rounded-full text-gray-500 font-medium">
-                                                        {Array.isArray(items) ? items.length : 1}
-                                                    </span>
-                                                </div>
-                                                {Array.isArray(items) && items.length > 0 && (
-                                                    <button onClick={() => exportCSV(category, items)}
-                                                        className="text-[11px] text-gray-500 hover:text-gray-300 bg-white/[0.03] hover:bg-white/[0.06] px-3 py-1.5 rounded-lg border border-white/[0.05] transition-all font-medium">
-                                                        CSV ↓
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div className="glass-card rounded-xl overflow-hidden">
-                                                <div className="overflow-x-auto">
-                                                    <table className="nexus-table w-full text-left">
-                                                        <thead>
-                                                            <tr>
-                                                                <th className="w-10 text-center">#</th>
-                                                                {columns.map((col) => <th key={col}>{col.replace(/([A-Z])/g, " $1").trim()}</th>)}
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {Array.isArray(items) ? items.map((row, rIdx) => (
-                                                                <tr key={rIdx}>
-                                                                    <td className="text-center text-gray-700 text-xs">{rIdx + 1}</td>
-                                                                    {columns.map((col) => <td key={col}>{renderCell(row?.[col], schemaFields?.[col]?.type)}</td>)}
-                                                                </tr>
-                                                            )) : (
-                                                                <tr><td colSpan={columns.length + 1}><pre className="text-xs text-gray-500 p-3 whitespace-pre-wrap">{JSON.stringify(items, null, 2)}</pre></td></tr>
-                                                            )}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })}
-                            </>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* ── HISTORY PANEL ────────────────────────────────── */}
+                {/* ── HISTORY SIDEBAR (left) ──────────────────────── */}
                 {history.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-12 mb-8"
-                    >
-                        <div className="flex items-center justify-between mb-4">
+                    <aside className="hidden lg:block w-72 flex-shrink-0 border-r border-white/[0.04] history-sidebar p-4 overflow-y-auto">
+                        <div className="flex items-center justify-between mb-4 px-1">
                             <div className="flex items-center space-x-2">
-                                <Clock size={16} className="text-gray-500" />
-                                <h2 className="text-sm font-bold text-white tracking-wide">Recent Extractions</h2>
-                                <span className="text-[10px] bg-white/[0.06] px-2 py-0.5 rounded-full text-gray-500 font-medium">{history.length}/{MAX_HISTORY}</span>
+                                <Clock size={14} className="text-gray-500" />
+                                <h2 className="text-xs font-bold text-white tracking-wide">History</h2>
+                                <span className="text-[9px] bg-white/[0.06] px-1.5 py-0.5 rounded-full text-gray-500 font-medium">{history.length}/{MAX_HISTORY}</span>
                             </div>
-                            <button onClick={handleClearHistory} className="text-[11px] text-gray-600 hover:text-red-400 transition-colors">
-                                Clear all
-                            </button>
+                            <button onClick={handleClearHistory} className="text-[10px] text-gray-600 hover:text-red-400 transition-colors">Clear</button>
                         </div>
                         <div className="space-y-2">
                             {[...history].reverse().map((entry) => (
@@ -647,68 +373,350 @@ export default function NexusDashboard() {
                                     layout
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 10 }}
-                                    className="glass-card glass-card-hover rounded-xl px-5 py-3.5 flex items-center justify-between group cursor-pointer"
+                                    className="glass-card glass-card-hover rounded-xl px-3 py-3 cursor-pointer group"
                                     onClick={() => loadFromHistory(entry)}
                                 >
-                                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                                            <Globe size={14} className="text-emerald-500" />
+                                    <div className="flex items-start space-x-2.5">
+                                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5 feature-icon-glow">
+                                            <Globe size={12} className="text-emerald-500" />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-white text-sm font-medium truncate">{entry.url}</p>
-                                            <p className="text-gray-600 text-xs">
-                                                {entry.timestamp} · {entry.entityCount} categories · {entry.totalItems} items
+                                            <p className="text-white text-[11px] font-semibold truncate">{entry.url}</p>
+                                            <p className="text-gray-600 text-[10px] mt-0.5">
+                                                {entry.entityCount} cat · {entry.totalItems} items
                                             </p>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center space-x-1 ml-3">
-                                        <button className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-600 hover:text-emerald-400 transition-all opacity-0 group-hover:opacity-100"
-                                            onClick={(e) => { e.stopPropagation(); loadFromHistory(entry); }} title="Load result">
-                                            <ExternalLink size={13} />
-                                        </button>
-                                        <button className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
-                                            onClick={(e) => { e.stopPropagation(); deleteHistory(entry.id); }} title="Delete">
-                                            <Trash2 size={13} />
+                                        <button
+                                            className="p-1 rounded-lg hover:bg-red-500/10 text-gray-700 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                            onClick={(e) => { e.stopPropagation(); deleteHistory(entry.id); }}
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={11} />
                                         </button>
                                     </div>
                                 </motion.div>
                             ))}
                         </div>
-                    </motion.div>
+                    </aside>
                 )}
 
-                {/* ── EMPTY STATE ──────────────────────────────────── */}
-                {!result && !loading && !error && history.length === 0 && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-center py-16">
-                        <div className="relative w-20 h-20 mx-auto mb-6">
-                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 blur-xl" />
-                            <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-white/[0.06] flex items-center justify-center">
-                                <Globe size={32} className="text-emerald-500/40" />
+                {/* ── MAIN CONTENT ────────────────────────────────── */}
+                <div className="flex-1 max-w-5xl mx-auto px-6 py-10">
+
+                    {/* ── HERO ──────────────────────────────────────────── */}
+                    <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+                        <h1 className="text-7xl md:text-8xl font-extrabold tracking-tight leading-none mb-4">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-br from-emerald-300 via-teal-200 to-cyan-300">
+                                Aria
+                            </span>
+                        </h1>
+                        <p className="text-gray-500 text-lg max-w-lg mx-auto leading-relaxed font-light">
+                            Paste any URL. Aria reads the page, understands it,
+                            and returns perfectly structured data.
+                        </p>
+                    </motion.div>
+
+                    {/* ── FEATURE CARDS (2×2) ──────────────────────────── */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10"
+                    >
+                        {FEATURES.map((f, i) => (
+                            <motion.div
+                                key={f.title}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 + i * 0.06 }}
+                                className="glass-card glass-card-hover rounded-2xl p-5 flex flex-col items-center text-center cursor-default group"
+                            >
+                                <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity duration-300 feature-icon-glow rounded-xl p-1">
+                                    <f.Illustration />
+                                </div>
+                                <h3 className="text-white text-sm font-extrabold mb-1.5 tracking-tight">{f.title}</h3>
+                                <p className="text-gray-400 text-xs leading-relaxed">{f.desc}</p>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+
+                    {/* ── MAIN INPUT CARD ──────────────────────────────── */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="glass-card gradient-border rounded-2xl overflow-hidden glow-emerald"
+                    >
+                        <div className="p-6 md:p-10 space-y-6">
+                            {/* API Key Settings */}
+                            <div>
+                                <button
+                                    onClick={() => setShowSettings(!showSettings)}
+                                    className="api-key-btn flex items-center space-x-2 text-xs font-semibold text-gray-400 hover:text-gray-200 transition-all py-2 mb-3"
+                                >
+                                    <Settings size={14} className={showSettings ? "text-emerald-400" : ""} />
+                                    <span className="tracking-wide">API Key</span>
+                                    {geminiKey ? (
+                                        <span className="flex items-center space-x-1 ml-1">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+                                            <span className="text-emerald-400 text-[10px] font-bold">Connected</span>
+                                        </span>
+                                    ) : (
+                                        <span className="text-red-400 text-[10px] font-bold ml-1 animate-pulse">● required</span>
+                                    )}
+                                </button>
+                                <AnimatePresence>
+                                    {showSettings && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-4 space-y-3">
+                                                <div className="flex items-center space-x-2">
+                                                    <Key size={14} className="text-emerald-500 flex-shrink-0" />
+                                                    <p className="text-gray-400 text-xs">
+                                                        Enter your Gemini API key.{" "}
+                                                        <a
+                                                            href="https://aistudio.google.com/apikey"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-emerald-500/70 hover:text-emerald-400 underline transition-colors"
+                                                        >
+                                                            Get a free key →
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showKey ? "text" : "password"}
+                                                        value={geminiKey}
+                                                        onChange={(e) => {
+                                                            setGeminiKey(e.target.value);
+                                                            localStorage.setItem("aria_gemini_key", e.target.value);
+                                                        }}
+                                                        placeholder="AIza..."
+                                                        className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg py-2.5 pl-3 pr-10 text-white font-mono text-xs focus:outline-none focus:border-emerald-500/30 transition-all placeholder:text-gray-700"
+                                                    />
+                                                    <button
+                                                        onClick={() => setShowKey(!showKey)}
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors"
+                                                    >
+                                                        {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                    </button>
+                                                </div>
+                                                <p className="text-gray-600 text-[10px]">
+                                                    🔒 Stored locally in your browser. Never sent to third parties.
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* URL Input */}
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                    <Search className="h-5 w-5 text-gray-600 group-focus-within:text-emerald-400 transition-colors duration-300" />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && !loading && handleScrape()}
+                                    placeholder="https://example.com"
+                                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl py-4 pl-12 pr-44 text-white font-mono text-sm focus:outline-none focus:border-emerald-500/30 focus:bg-white/[0.05] transition-all duration-300 placeholder:text-gray-700"
+                                />
+                                <button
+                                    onClick={handleScrape}
+                                    disabled={loading || !url.trim()}
+                                    className="absolute right-2 top-2 bottom-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:from-gray-700 disabled:to-gray-700 disabled:opacity-40 text-white px-8 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40"
+                                >
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+                                    <span className="text-base">{loading ? "Extracting" : "Extract"}</span>
+                                </button>
+                            </div>
+
+                            {/* Terminal */}
+                            <div className="relative bg-[#08080d] rounded-xl border border-white/[0.04] overflow-hidden">
+                                <div className="h-8 border-b border-white/[0.04] flex items-center px-3 space-x-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+                                    <span className="ml-3 text-[10px] text-gray-600 font-mono">aria_agent</span>
+                                </div>
+                                <div className="p-4 h-28 font-mono text-xs text-gray-500 overflow-hidden">
+                                    {logs.length === 0 && !loading && (
+                                        <div className="flex items-start mb-1">
+                                            <span className="text-emerald-600 mr-2 flex-shrink-0">$</span>
+                                            <span className="text-gray-600">Awaiting input...</span>
+                                            <span className="inline-block w-2 h-4 bg-emerald-500/60 ml-1 animate-pulse" />
+                                        </div>
+                                    )}
+                                    {logs.map((log, i) => (
+                                        <motion.div key={`${i}-${log}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="mb-1 flex items-start">
+                                            <span className="text-emerald-600 mr-2 flex-shrink-0">$</span>
+                                            <span className="text-gray-400">{log}</span>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                                {loading && (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute bottom-3 right-4 flex items-baseline space-x-1">
+                                        <span className="text-3xl font-bold tabular-nums text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]">
+                                            {elapsed.toFixed(1)}
+                                        </span>
+                                        <span className="text-emerald-600 text-xs font-medium">sec</span>
+                                    </motion.div>
+                                )}
                             </div>
                         </div>
-                        <h3 className="text-gray-300 text-xl font-semibold mb-2">Ready when you are</h3>
-                        <p className="text-gray-600 text-sm max-w-md mx-auto leading-relaxed">
-                            Paste any URL above — Aria will visit the page, understand its content,
-                            and return clean, structured data you can export instantly.
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-2 mt-8">
-                            {["E-commerce", "News", "Social Media", "Music", "Real Estate", "Any page"].map((t) => (
-                                <span key={t} className="text-xs bg-white/[0.03] border border-white/[0.05] text-gray-500 px-3 py-1.5 rounded-lg">{t}</span>
+                    </motion.div>
+
+                    {/* ── ERROR ────────────────────────────────────────── */}
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                className="mt-6 p-4 bg-red-500/5 border border-red-500/15 rounded-xl flex items-start space-x-3">
+                                <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={18} />
+                                <div>
+                                    <p className="text-red-400 font-semibold text-sm">Extraction Failed</p>
+                                    <p className="text-red-400/60 text-xs mt-1">{error}</p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* ── LOADING ──────────────────────────────────────── */}
+                    {loading && (
+                        <div className="mt-8 space-y-4">
+                            <div className="flex items-center justify-center space-x-2 text-gray-500 text-sm">
+                                <Zap size={14} className="text-emerald-500 animate-pulse" />
+                                <span>Aria is reading and organizing data...</span>
+                            </div>
+                            {[1, 2].map((i) => (
+                                <div key={i} className="glass-card rounded-xl p-6 space-y-3 animate-pulse">
+                                    <div className="h-3 bg-white/[0.04] rounded w-1/4" />
+                                    <div className="h-2.5 bg-white/[0.03] rounded w-full" />
+                                    <div className="h-2.5 bg-white/[0.03] rounded w-4/5" />
+                                </div>
                             ))}
                         </div>
-                    </motion.div>
-                )}
+                    )}
 
-                {/* ── FOOTER ──────────────────────────────────────── */}
-                <div className="mt-16 pb-8 text-center">
-                    <p className="text-gray-700 text-xs">
-                        Built with DrissionPage + Google Gemini AI ·{" "}
-                        <a href="/privacy" className="hover:text-gray-500 transition-colors">Privacy</a>{" · "}
-                        <a href="/terms" className="hover:text-gray-500 transition-colors">Terms</a>
-                    </p>
-                </div>
-            </div>
+                    {/* ── RESULTS ──────────────────────────────────────── */}
+                    <div className="mt-8 space-y-6">
+                        <AnimatePresence>
+                            {result && (
+                                <>
+                                    {/* Summary */}
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                        className="glass-card rounded-xl px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                                                <Database size={16} className="text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-semibold text-sm">Extraction Complete</p>
+                                                <p className="text-gray-500 text-xs">{result.entityCount} categories · {result.totalItems} items · {elapsed.toFixed(1)}s</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={exportJSON}
+                                            className="flex items-center space-x-2 text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-gray-300 hover:text-white px-4 py-2 rounded-lg transition-all font-medium">
+                                            <Download size={13} /><span>Export JSON</span>
+                                        </button>
+                                    </motion.div>
+
+                                    {/* Category Tables */}
+                                    {Object.entries(result.data).map(([category, items], idx) => {
+                                        const schemaFields = result.schema[category]?.fields;
+                                        const columns: string[] = schemaFields
+                                            ? Object.keys(schemaFields)
+                                            : (Array.isArray(items) && items.length > 0 && typeof items[0] === "object" ? Object.keys(items[0]) : []);
+
+                                        return (
+                                            <motion.div key={category} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center space-x-2.5">
+                                                        <Table2 className="text-emerald-500" size={15} />
+                                                        <h2 className="text-sm font-bold text-white tracking-wide">{category.replace(/([A-Z])/g, " $1").trim()}</h2>
+                                                        <span className="text-[10px] bg-white/[0.06] px-2 py-0.5 rounded-full text-gray-500 font-medium">
+                                                            {Array.isArray(items) ? items.length : 1}
+                                                        </span>
+                                                    </div>
+                                                    {Array.isArray(items) && items.length > 0 && (
+                                                        <button onClick={() => exportCSV(category, items)}
+                                                            className="text-[11px] text-gray-500 hover:text-gray-300 bg-white/[0.03] hover:bg-white/[0.06] px-3 py-1.5 rounded-lg border border-white/[0.05] transition-all font-medium">
+                                                            CSV ↓
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="glass-card rounded-xl overflow-hidden">
+                                                    <div className="overflow-x-auto">
+                                                        <table className="nexus-table w-full text-left">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th className="w-10 text-center">#</th>
+                                                                    {columns.map((col) => <th key={col}>{col.replace(/([A-Z])/g, " $1").trim()}</th>)}
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {Array.isArray(items) ? items.map((row, rIdx) => (
+                                                                    <tr key={rIdx}>
+                                                                        <td className="text-center text-gray-700 text-xs">{rIdx + 1}</td>
+                                                                        {columns.map((col) => <td key={col}>{renderCell(row?.[col], schemaFields?.[col]?.type)}</td>)}
+                                                                    </tr>
+                                                                )) : (
+                                                                    <tr><td colSpan={columns.length + 1}><pre className="text-xs text-gray-500 p-3 whitespace-pre-wrap">{JSON.stringify(items, null, 2)}</pre></td></tr>
+                                                                )}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* ── EMPTY STATE ──────────────────────────────────── */}
+                    {!result && !loading && !error && history.length === 0 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-center py-16">
+                            <div className="relative w-20 h-20 mx-auto mb-6">
+                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 blur-xl" />
+                                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-white/[0.06] flex items-center justify-center">
+                                    <Globe size={32} className="text-emerald-500/40" />
+                                </div>
+                            </div>
+                            <h3 className="text-gray-300 text-xl font-bold mb-2">Ready when you are</h3>
+                            <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
+                                Paste any URL above — Aria will visit the page, understand its content,
+                                and return clean, structured data you can export instantly.
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2 mt-8">
+                                {["E-commerce", "News", "Social Media", "Music", "Real Estate", "Any page"].map((t) => (
+                                    <span key={t} className="text-xs bg-white/[0.03] border border-white/[0.05] text-gray-400 px-3 py-1.5 rounded-lg font-medium">{t}</span>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* ── STICKY PRIVACY FOOTER ─────────────────────────── */}
+                    <div className="mt-16 pb-6">
+                        <div className="privacy-bar rounded-xl px-5 py-3 flex items-center justify-center space-x-1 text-center">
+                            <Shield size={12} className="text-gray-600 flex-shrink-0" />
+                            <p className="text-gray-600 text-[11px] font-medium">
+                                By using Aria, you agree to our{" "}
+                                <a href="/terms" className="text-emerald-500/70 hover:text-emerald-400 underline transition-colors">Terms of Service</a>{" "}and{" "}
+                                <a href="/privacy" className="text-emerald-500/70 hover:text-emerald-400 underline transition-colors">Privacy Policy</a>
+                            </p>
+                        </div>
+                    </div>
+
+                </div>{/* end main content */}
+            </div>{/* end flex */}
         </div>
     );
 }
