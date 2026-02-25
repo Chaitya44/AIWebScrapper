@@ -2,7 +2,7 @@ services:
   - type: web
     name: aria-backend
     runtime: docker
-    plan: starter
+    plan: free
     envVars:
       - key: GEMINI_API_KEY
         sync: false
