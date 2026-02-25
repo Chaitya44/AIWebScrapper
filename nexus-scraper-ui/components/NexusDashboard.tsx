@@ -157,7 +157,7 @@ export default function NexusDashboard() {
                     const saved = localStorage.getItem(HISTORY_KEY);
                     if (saved) setHistory(JSON.parse(saved));
                 }
-            } catch { }
+            } catch (err) { console.error('[History] Failed to load:', err); }
         };
         loadData();
     }, [user]);
@@ -208,6 +208,9 @@ export default function NexusDashboard() {
         setElapsed(0);
         setLogs(["Initializing browser agent...", "Opening secure tunnel..."]);
 
+        // Lock navigation during scraping
+        window.dispatchEvent(new CustomEvent('aria-scraping', { detail: { active: true } }));
+
         timerRef.current = setInterval(() => setElapsed((p) => p + 0.1), 100);
 
         try {
@@ -233,6 +236,7 @@ export default function NexusDashboard() {
             if (timerRef.current) clearInterval(timerRef.current);
             setLoading(false);
             setResult(json);
+            window.dispatchEvent(new CustomEvent('aria-scraping', { detail: { active: false } }));
 
             // Save to history
             const entry: HistoryEntry = {
@@ -279,6 +283,7 @@ export default function NexusDashboard() {
             setLoading(false);
             setError(e.message || "Connection failed");
             addLog(`Error: ${e.message}`);
+            window.dispatchEvent(new CustomEvent('aria-scraping', { detail: { active: false } }));
         }
     };
 
@@ -348,6 +353,11 @@ export default function NexusDashboard() {
 
     return (
         <div className="min-h-screen relative">
+            {/* Lock overlay during scraping — prevents navigation */}
+            {loading && (
+                <div className="fixed inset-0 z-[99] bg-transparent cursor-wait" onClick={(e) => e.preventDefault()} />
+            )}
+
             {/* Floating orbs */}
             <div className="orb" style={{ width: 400, height: 400, top: -100, left: -100, background: "rgba(16, 185, 129, 0.5)" }} />
             <div className="orb" style={{ width: 350, height: 350, bottom: -50, right: -50, background: "rgba(6, 182, 212, 0.4)", animationDelay: "-5s" }} />

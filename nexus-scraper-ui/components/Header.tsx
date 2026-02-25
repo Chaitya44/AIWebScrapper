@@ -12,6 +12,7 @@ export default function Header() {
     const { user, signOut } = useAuth();
     const [theme, setTheme] = useState<"dark" | "light">("dark");
     const [showMenu, setShowMenu] = useState(false);
+    const [isLocked, setIsLocked] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -32,6 +33,17 @@ export default function Header() {
         return () => document.removeEventListener("mousedown", handleClick);
     }, [showMenu]);
 
+    // Listen for scraping lock/unlock events
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            setIsLocked(detail?.active ?? false);
+            if (detail?.active) setShowMenu(false);
+        };
+        window.addEventListener('aria-scraping', handler);
+        return () => window.removeEventListener('aria-scraping', handler);
+    }, []);
+
     const toggleTheme = () => {
         const next = theme === "dark" ? "light" : "dark";
         setTheme(next);
@@ -44,7 +56,7 @@ export default function Header() {
     const isDark = theme === "dark";
 
     return (
-        <header className="sticky top-0 z-[100] w-full header-bar">
+        <header className={`sticky top-0 z-[100] w-full header-bar transition-opacity duration-300 ${isLocked ? 'pointer-events-none opacity-50' : ''}`}>
             <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                 {/* Left — Logo */}
                 <Link href="/" className="flex items-center space-x-2.5 group">
