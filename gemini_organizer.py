@@ -70,6 +70,8 @@ Every item MUST have every field from the schema (null if missing).
 Clean the data: strip HTML tags, normalize currencies to numbers, parse dates to ISO format.
 For text content: extract full text, don't truncate meaningful content.
 For links: capture both the text and the href URL.
+⚠️ CRITICAL: Convert ALL relative URLs (like /platform, /docs/scaling) to FULL absolute URLs using the source domain: {source_url}
+For example: /platform → {source_url}/platform
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEP 4 — OUTPUT FORMAT
@@ -99,6 +101,8 @@ RULES:
 - You MUST extract data. An empty result is a failure. Even if the page seems sparse, extract whatever text/links/info exists.
 - Prefer more categories with fewer items over one giant category.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SOURCE URL: {source_url}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RAW HTML CONTENT:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -136,11 +140,27 @@ class GeminiOrganizer:
         html = " ".join(html.split())
         return html[:self.max_chars]
 
-    def organize(self, raw_html: str, api_key: str = None) -> "OrganizedResult":
+    @staticmethod
+    def _resolve_relative_urls(data: dict, base_url: str) -> dict:
+        """Post-process: convert any remaining relative URLs to absolute."""
+        from urllib.parse import urljoin
+        if not base_url:
+            return data
+        for category, items in data.items():
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict):
+                        for key, val in item.items():
+                            if isinstance(val, str) and val.startswith('/') and not val.startswith('//'):
+                                item[key] = urljoin(base_url, val)
+        return data
+
+    def organize(self, raw_html: str, api_key: str = None, source_url: str = "") -> "OrganizedResult":
         """
         Core method. Feed HTML in, get a fully-typed, schema-aligned result out.
         Uses model fallback chain if quota is hit.
         api_key: optional user-provided key (BYOK). Falls back to env var.
+        source_url: the URL that was scraped (used to resolve relative URLs).
         """
         key = api_key or API_KEY
         if not key:
@@ -151,7 +171,7 @@ class GeminiOrganizer:
         clean_html = self._preprocess_html(raw_html)
         print(f"[ORGANIZER] HTML: {len(raw_html):,} → {len(clean_html):,} chars")
 
-        prompt = ORGANIZER_PROMPT.format(html_content=clean_html)
+        prompt = ORGANIZER_PROMPT.format(html_content=clean_html, source_url=source_url or "unknown")
 
         last_error = None
         for model_name in MODEL_CHAIN:
@@ -190,6 +210,9 @@ class GeminiOrganizer:
                                 for field in fields:
                                     if field not in item:
                                         item[field] = None
+
+                # Post-process: resolve any remaining relative URLs
+                data = self._resolve_relative_urls(data, source_url)
 
                 return OrganizedResult(schema=schema, data=data)
 

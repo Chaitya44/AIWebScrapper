@@ -77,7 +77,7 @@ async def scrape_url(request: ScrapeRequest):
         # BYOK: pass user key (never logged)
         result = await loop.run_in_executor(
             None,
-            lambda: ai_agent.extract_structured(html, api_key=request.geminiKey)
+            lambda: ai_agent.extract_structured(html, api_key=request.geminiKey, source_url=request.url)
         )
 
         api_payload = result.to_api_response()
