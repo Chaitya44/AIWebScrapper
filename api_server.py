@@ -11,10 +11,14 @@ import ai_agent
 
 app = FastAPI(title="NEXUS SCRAPER API", version="3.0.0")
 
-# CORS — allow any localhost port for dev
+# CORS — explicit origins (wildcard + credentials = blocked by browsers)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://aria-19.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
