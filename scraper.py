@@ -1,16 +1,16 @@
 """
-scraper.py — Universal Scraper (DrissionPage local, Selenium server)
-Based on the original AI-WebScraper project by Chaitya44.
+scraper.py — Hybrid Universal Scraper
+Strategy: requests-first (fast, no browser), Selenium fallback (for JS-heavy sites)
 
 Flow:
-  1. Detect environment (local vs server/Docker)
-  2. Launch browser with optimal settings
-  3. Quick SPA detection — if HTML is thin, scroll more to trigger API loads
-  4. Clean HTML with BeautifulSoup
-  5. Return clean HTML → GeminiOrganizer handles the rest
+  1. Try to fetch with requests + BeautifulSoup (< 3 seconds)
+  2. If HTML is too thin → site needs JS rendering → fall back to Selenium
+  3. On server: Selenium with memory-optimized Chrome
+  4. Locally: DrissionPage with full anti-detection + API interception
 """
 
 from bs4 import BeautifulSoup, Comment
+import requests as http_requests
 import tempfile
 import shutil
 import random
@@ -19,14 +19,32 @@ import os
 import traceback
 
 
+# Threshold: if requests-fetched HTML has less meaningful text, it's a JS-rendered site
+SPA_TEXT_THRESHOLD = 500  # characters of visible text
+
+
 def get_website_content(url: str, headless: bool = False) -> tuple[str | None, str]:
     """
     Fetch a URL and return (cleaned_html, api_data_json_string).
-    Uses Selenium on server, DrissionPage locally.
+    Uses a fast requests-first approach, falls back to browser for JS sites.
     Returns (None, "") on total failure.
     """
-    print(f"\n🕵️ Stealth Scraping: {url}")
+    print(f"\n🕵️ Scraping: {url}")
 
+    # ── PHASE 1: Try fast HTTP fetch (no browser needed) ──
+    html = _try_requests_fetch(url)
+    if html:
+        text_len = len(BeautifulSoup(html, "html.parser").get_text(strip=True))
+        if text_len > SPA_TEXT_THRESHOLD:
+            print(f"⚡ Fast fetch succeeded ({text_len:,} chars of text) — no browser needed!")
+            clean = _clean_html(html)
+            return clean[:300000], ""
+        else:
+            print(f"📡 Thin page ({text_len} chars text) — needs JS rendering, using browser...")
+    else:
+        print("📡 HTTP fetch failed — using browser fallback...")
+
+    # ── PHASE 2: Browser fallback for JS-rendered sites ──
     is_server = os.environ.get("RENDER") or os.environ.get("CHROMIUM_PATH")
 
     if is_server:
@@ -35,13 +53,36 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
         return _scrape_with_drission(url, headless)
 
 
+def _try_requests_fetch(url: str) -> str | None:
+    """Fast HTTP fetch with requests — works for most static/SSR sites."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+        }
+        resp = http_requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+        resp.raise_for_status()
+
+        # Only process HTML responses
+        content_type = resp.headers.get("content-type", "")
+        if "text/html" not in content_type and "application/xhtml" not in content_type:
+            return None
+
+        return resp.text
+    except Exception as e:
+        print(f"⚠️ HTTP fetch error: {e}")
+        return None
+
+
 def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
     """Server-mode scraping with Selenium (reliable in Docker)."""
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.chrome.service import Service
 
-    print("[Scraper] Server mode — using Selenium + ChromeDriver")
+    print("[Scraper] Server mode — Selenium + ChromeDriver")
 
     temp_user_data = tempfile.mkdtemp()
     driver = None
@@ -53,61 +94,40 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
         opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-extensions")
-        opts.add_argument("--disable-background-networking")
-        opts.add_argument("--disable-default-apps")
-        opts.add_argument("--disable-sync")
+        opts.add_argument("--single-process")
         opts.add_argument("--window-size=1280,720")
         opts.add_argument("--disable-blink-features=AutomationControlled")
         opts.add_argument(f"--user-data-dir={temp_user_data}")
 
-        # Set Chromium binary
         chromium_path = os.environ.get("CHROMIUM_PATH")
         if chromium_path:
             opts.binary_location = chromium_path
 
-        # Use chromedriver from system
         service = Service("/usr/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=opts)
-        driver.set_page_load_timeout(45)
+        driver.set_page_load_timeout(40)
 
-        # Anti-detection
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-        # Navigate to URL
         print(f"🌐 Loading {url}...")
         driver.get(url)
 
-        # Verify we're on the right page (not stuck on about:blank)
+        # Verify navigation succeeded
         current = driver.current_url
         if current in ("about:blank", "data:,", "chrome://newtab/"):
-            print(f"⚠️ Navigation failed — still on {current}")
+            print(f"⚠️ Navigation failed — stuck on {current}")
             return None, ""
 
-        print(f"✅ Page loaded: {current}")
-
-        # Wait for JS to render
+        print(f"✅ Loaded: {current}")
         time.sleep(2)
 
-        # Quick SPA check
-        initial_len = len(driver.page_source)
-        is_spa = initial_len < 10000
-
-        if is_spa:
-            print(f"⚡ SPA detected ({initial_len:,} chars) — extra scrolling...")
-            scroll_count = 5
-        else:
-            print(f"📄 Rich HTML ({initial_len:,} chars) — light scrolling...")
-            scroll_count = 3
-
         # Scroll to trigger lazy loading
-        for _ in range(scroll_count):
+        for _ in range(4):
             driver.execute_script("window.scrollBy(0, 500)")
             time.sleep(0.5)
 
-        # Grab final HTML
         raw_html = driver.page_source
         clean = _clean_html(raw_html)
-
         print(f"✅ Captured {len(clean):,} chars")
         return clean[:300000], ""
 
@@ -129,19 +149,17 @@ def _scrape_with_selenium(url: str) -> tuple[str | None, str]:
 
 
 def _scrape_with_drission(url: str, headless: bool) -> tuple[str | None, str]:
-    """Local-mode scraping with DrissionPage (better anti-detection)."""
+    """Local-mode scraping with DrissionPage."""
     from DrissionPage import ChromiumPage, ChromiumOptions
     import json
 
-    print("[Scraper] Local mode — using DrissionPage")
+    print("[Scraper] Local mode — DrissionPage")
 
     temp_user_data = tempfile.mkdtemp()
-    width = random.randint(1024, 1920)
-    height = random.randint(768, 1080)
 
     co = ChromiumOptions()
     co.headless(headless)
-    co.set_argument(f'--window-size={width},{height}')
+    co.set_argument(f'--window-size={random.randint(1024,1920)},{random.randint(768,1080)}')
     co.set_argument(f'--user-data-dir={temp_user_data}')
     co.set_argument('--no-first-run')
     co.set_argument('--disable-blink-features=AutomationControlled')
@@ -154,46 +172,37 @@ def _scrape_with_drission(url: str, headless: bool) -> tuple[str | None, str]:
     page = None
     api_responses = []
     total_api_bytes = 0
-
-    # Max API data to capture
     MAX_API_DATA_BYTES = 50_000
     SKIP_PATTERNS = [
         "google-analytics", "googletagmanager", "facebook.com/tr",
         "doubleclick", "analytics", "tracking", "sentry", "hotjar",
-        "amplitude", "segment", "mixpanel", "clarity.ms", ".png",
-        ".jpg", ".jpeg", ".gif", ".svg", ".woff", ".css", ".js",
-        "favicon", "beacon", "telemetry",
+        "amplitude", "segment", "mixpanel", "clarity.ms",
+        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".woff", ".css",
+        ".js", "favicon", "beacon", "telemetry",
     ]
 
     try:
         page = ChromiumPage(addr_or_opts=co)
         page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
+        # Start API listener for SPA data
+        use_listener = False
+        try:
+            page.listen.start()
+            use_listener = True
+        except Exception:
+            pass
+
         page.get(url)
         time.sleep(2)
 
-        # Quick SPA check
-        initial_len = len(page.html)
-        is_spa = initial_len < 10000
-
-        if is_spa:
-            print(f"⚡ SPA detected ({initial_len:,} chars) — enabling API listener + extra scrolling...")
-            try:
-                page.listen.start()
-            except Exception:
-                is_spa = False  # Listener failed, skip
-            scroll_count = 6
-        else:
-            print(f"📄 Rich HTML ({initial_len:,} chars) — light scrolling...")
-            scroll_count = 3
-
         # Scroll
-        for _ in range(scroll_count):
+        for _ in range(5):
             page.scroll.down(500)
             time.sleep(random.uniform(0.4, 0.8))
 
-        # Collect API data only for SPAs
-        if is_spa:
+        # Collect API data
+        if use_listener:
             try:
                 for packet in page.listen.steps(timeout=2):
                     if not packet.response:
@@ -227,12 +236,11 @@ def _scrape_with_drission(url: str, headless: bool) -> tuple[str | None, str]:
         raw_html = page.html
         clean = _clean_html(raw_html)
 
-        # Build API data string
         api_data_str = ""
         if api_responses:
             api_data_str = json.dumps(api_responses, ensure_ascii=False, default=str)[:MAX_API_DATA_BYTES]
 
-        print(f"✅ Captured {len(clean):,} chars HTML + {len(api_data_str):,} chars API data")
+        print(f"✅ Captured {len(clean):,} chars HTML + {len(api_data_str):,} chars API")
         return clean[:300000], api_data_str
 
     except Exception as e:
@@ -253,7 +261,7 @@ def _scrape_with_drission(url: str, headless: bool) -> tuple[str | None, str]:
 
 
 def _clean_html(raw_html: str) -> str:
-    """Remove scripts, styles, SVGs, comments — keep meaningful content."""
+    """Remove scripts, styles, SVGs, comments."""
     soup = BeautifulSoup(raw_html, "html.parser")
     for tag in soup(["script", "style", "svg", "iframe", "noscript"]):
         tag.decompose()
