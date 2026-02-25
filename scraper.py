@@ -149,12 +149,16 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
                 chrome_proc.kill()
             return None, ""
 
-        # Connect DrissionPage to the running Chrome
-        co.set_local_port(debug_port)
-        co.auto_port(False)
+        # Connect DrissionPage to the running Chrome via address
+        print(f"🔗 Connecting DrissionPage to 127.0.0.1:{debug_port}...")
 
     try:
-        page = ChromiumPage(addr_or_opts=co)
+        if is_server:
+            # Connect to the manually launched Chrome
+            page = ChromiumPage(addr_or_opts=f'127.0.0.1:{debug_port}')
+        else:
+            co.auto_port()
+            page = ChromiumPage(addr_or_opts=co)
 
         # Anti-detection: remove the webdriver flag
         page.run_js("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
