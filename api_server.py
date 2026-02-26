@@ -9,6 +9,7 @@ import traceback
 import os
 import scraper
 import ai_agent
+from fastapi.responses import JSONResponse
 
 app = FastAPI(title="NEXUS SCRAPER API", version="3.0.0")
 
@@ -101,23 +102,28 @@ async def scrape_url(request: ScrapeRequest):
         )
 
         api_payload = result.to_api_response()
-        if api_payload['entityCount'] == 0 and api_payload['totalItems'] == 0 and not request.geminiKey:
+        
+        # Ensure payload is JSON-serializable
+        serializable_payload = json.loads(json.dumps(api_payload, default=str))
+
+        if serializable_payload.get('entityCount', 0) == 0 and serializable_payload.get('totalItems', 0) == 0 and not request.geminiKey:
             raise HTTPException(status_code=400, detail="No API key provided. Please enter your Gemini API key in the settings.")
-        print(f"[API] ✅ Extracted {api_payload['entityCount']} categories, {api_payload['totalItems']} items")
+        print(f"[API] ✅ Extracted {serializable_payload.get('entityCount')} categories, {serializable_payload.get('totalItems')} items")
 
         return {
             "status": "success",
-            **api_payload,
+            **serializable_payload,
             "timestamp": datetime.now().isoformat(),
             "url": request.url
         }
 
-    except HTTPException:
-        raise
+    except HTTPException as he:
+        print(f"[API] ❌ HTTPException: {he.detail}")
+        return JSONResponse(status_code=he.status_code, content={"error": he.detail})
     except Exception as e:
         print(f"[API] ❌ Error: {e}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 if __name__ == "__main__":

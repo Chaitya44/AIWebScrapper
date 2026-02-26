@@ -21,10 +21,12 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
     
     co = ChromiumOptions()
     co.headless(headless or is_server)
+    co.set_argument('--headless=new')
     co.set_argument('--no-sandbox')
     co.set_argument('--disable-dev-shm-usage')
     co.set_argument('--disable-gpu')
     co.set_argument('--disable-software-rasterizer')
+    co.set_user_agent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
     co.set_argument(f'--user-data-dir={temp_user_data}')
     co.set_argument('--window-size=1280,720')
     
@@ -78,10 +80,12 @@ def get_website_content(url: str, headless: bool = False) -> tuple[str | None, s
         print(f"🌐 Loading {url}...")
         try:
             page.get(url)
+            page.wait.doc_loaded()  # Wait for document.readyState
         except Exception as e:
             print(f"⚠️ Page load warning: {e}")
             
-        time.sleep(2)
+        time.sleep(3)  # Fallback for dynamic content mapping
+
         
         # Scroll
         for _ in range(4):
