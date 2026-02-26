@@ -123,6 +123,7 @@ const FEATURES = [
 export default function NexusDashboard() {
     const { user } = useAuth();
     const [url, setUrl] = useState("");
+    const [extractionMode, setExtractionMode] = useState<"html" | "network">("html");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<ScrapeResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -222,7 +223,7 @@ export default function NexusDashboard() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     url: url.trim(),
-                    config: { stealthMode: true, headlessMode: false, geminiParsing: true },
+                    config: { stealthMode: true, headlessMode: false, geminiParsing: true, extraction_mode: extractionMode },
                     geminiKey: geminiKey || undefined,
                 }),
             });
@@ -554,6 +555,19 @@ export default function NexusDashboard() {
                                     {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
                                     <span className="text-base">{loading ? "Extracting" : "Extract"}</span>
                                 </button>
+                            </div>
+
+                            {/* Extraction Mode Toggle */}
+                            <div className="flex items-center space-x-4 pl-2 mt-2">
+                                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Engine:</span>
+                                <label className="flex items-center space-x-1.5 cursor-pointer group">
+                                    <input type="radio" name="mode" value="html" checked={extractionMode === "html"} onChange={() => setExtractionMode("html")} className="accent-emerald-500 w-3 h-3" />
+                                    <span className={`text-xs transition-colors ${extractionMode === "html" ? "text-emerald-400 font-bold" : "text-gray-500 group-hover:text-gray-300"}`}>Smart DOM</span>
+                                </label>
+                                <label className="flex items-center space-x-1.5 cursor-pointer group">
+                                    <input type="radio" name="mode" value="network" checked={extractionMode === "network"} onChange={() => setExtractionMode("network")} className="accent-emerald-500 w-3 h-3" />
+                                    <span className={`text-xs transition-colors ${extractionMode === "network" ? "text-emerald-400 font-bold" : "text-gray-500 group-hover:text-gray-300"}`}>Fast API Intercept</span>
+                                </label>
                             </div>
 
                             {/* Terminal */}

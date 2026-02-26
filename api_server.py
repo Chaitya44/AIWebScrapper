@@ -7,20 +7,22 @@ from datetime import datetime
 import json
 import traceback
 import os
+import sys
 import scraper
 import ai_agent
 from fastapi.responses import JSONResponse
+
+# Fix for Windows console emoji printing
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 
 app = FastAPI(title="NEXUS SCRAPER API", version="3.0.0")
 
 # CORS — explicit origins (wildcard + credentials = blocked by browsers)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://aria-19.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:3001",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,6 +36,7 @@ class ScraperConfig(BaseModel):
     headlessMode: bool = False  # Visible browser = more trusted by websites
     geminiParsing: bool = True
     deepScroll: bool = False
+    extraction_mode: str = "html"  # "html" or "network"
 
 
 class ScrapeRequest(BaseModel):
@@ -75,7 +78,8 @@ async def scrape_url(request: ScrapeRequest):
             None,
             scraper.get_website_content,
             request.url,
-            request.config.headlessMode
+            request.config.headlessMode,
+            request.config.extraction_mode
         )
 
         # Unpack (html, api_data) tuple
