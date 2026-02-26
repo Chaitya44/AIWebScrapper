@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime
 import json
 import traceback
+import os
 import scraper
 import ai_agent
 
@@ -41,6 +42,11 @@ class ScrapeRequest(BaseModel):
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
+
+@app.get("/")
+@app.head("/")
+async def root():
+    return {"status": "alive"}
 
 @app.get("/api/health")
 async def health_check():
@@ -124,4 +130,5 @@ if __name__ == "__main__":
     print("[INFO] Scrape:        POST http://localhost:8000/api/scrape")
     print("=" * 60 + "\n")
 
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

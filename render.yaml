@@ -3,6 +3,7 @@ services:
     name: aria-backend
     runtime: docker
     plan: free
+    healthCheckPath: /
     envVars:
       - key: GEMINI_API_KEY
         sync: false
