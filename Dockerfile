@@ -35,4 +35,4 @@ EXPOSE 8000
 
 # Use shell form to expand the $PORT environment variable injected by Render
 # If $PORT is not set (e.g., running locally), default back to 8000
-CMD uvicorn api_server:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD python -m uvicorn api_server:app --host 0.0.0.0 --port ${PORT:-8000}
